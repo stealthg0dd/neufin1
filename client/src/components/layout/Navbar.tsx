@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3 } from "lucide-react";
+import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3, PieChart } from "lucide-react";
 import logoPath from "@assets/neufin tagline bare logo.png";
 
 const Navbar = () => {
@@ -64,6 +64,15 @@ const Navbar = () => {
               >
                 <BarChart3 className="mr-1.5 h-4 w-4" />
                 Market Data
+              </Button>
+            </Link>
+            <Link href="/bias-analyzer">
+              <Button 
+                variant={location === "/bias-analyzer" ? "default" : "ghost"} 
+                className="text-sm h-9"
+              >
+                <PieChart className="mr-1.5 h-4 w-4" />
+                Bias Analyzer
               </Button>
             </Link>
           </nav>
