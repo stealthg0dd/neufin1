@@ -10,7 +10,7 @@ const Navbar = () => {
   const { isAuthenticated } = useAuth();
   
   return (
-    <header className="border-b sticky top-0 bg-white z-10">
+    <header className="border-b fixed top-0 left-0 right-0 bg-white z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link href="/">

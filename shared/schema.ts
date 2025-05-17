@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, doublePrecision, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, doublePrecision, jsonb, decimal, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -554,3 +554,141 @@ export type StockAlert = typeof stockAlerts.$inferSelect;
 
 export type InsertStockAnalysis = z.infer<typeof insertStockAnalysisSchema>;
 export type StockAnalysis = typeof stockAnalysis.$inferSelect;
+
+// Plaid Integration Tables
+export const plaidItems = pgTable("plaid_items", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  itemId: text("item_id").notNull().unique(), // Plaid's item_id
+  accessToken: text("access_token").notNull(), // Plaid access token (should be encrypted in production)
+  institutionId: text("institution_id").notNull(),
+  institutionName: text("institution_name").notNull(),
+  status: text("status").notNull().default("active"), // active, error, disconnected
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  consentExpiresAt: timestamp("consent_expires_at"),
+});
+
+export const plaidAccounts = pgTable("plaid_accounts", {
+  id: serial("id").primaryKey(),
+  plaidItemId: integer("plaid_item_id").notNull().references(() => plaidItems.id),
+  accountId: text("account_id").notNull().unique(), // Plaid's account_id
+  name: text("name").notNull(),
+  mask: text("mask"),
+  officialName: text("official_name"),
+  type: text("type").notNull(), // investment, depository, credit, loan, etc.
+  subtype: text("subtype"), // 401k, brokerage, mutual fund, etc.
+  status: text("status").notNull().default("active"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(), 
+});
+
+export const plaidHoldings = pgTable("plaid_holdings", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
+  securityId: text("security_id").notNull(),
+  symbol: text("symbol"),
+  name: text("name"),
+  quantity: real("quantity").notNull(),
+  costBasis: real("cost_basis"),
+  currentPrice: real("current_price"),
+  currentValue: real("current_value"),
+  isoCurrencyCode: text("iso_currency_code"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const plaidInvestmentTransactions = pgTable("plaid_investment_transactions", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
+  plaidTransactionId: text("plaid_transaction_id").notNull().unique(),
+  securityId: text("security_id"),
+  symbol: text("symbol"),
+  name: text("name"),
+  type: text("type").notNull(), // buy, sell, dividend, etc.
+  amount: real("amount"),
+  price: real("price"),
+  quantity: real("quantity"),
+  fees: real("fees"),
+  date: timestamp("date").notNull(),
+  isoCurrencyCode: text("iso_currency_code"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relations for Plaid tables
+export const plaidItemsRelations = relations(plaidItems, ({ one, many }) => ({
+  user: one(users, {
+    fields: [plaidItems.userId],
+    references: [users.id],
+  }),
+  accounts: many(plaidAccounts),
+}));
+
+export const plaidAccountsRelations = relations(plaidAccounts, ({ one, many }) => ({
+  item: one(plaidItems, {
+    fields: [plaidAccounts.plaidItemId],
+    references: [plaidItems.id],
+  }),
+  holdings: many(plaidHoldings),
+  transactions: many(plaidInvestmentTransactions),
+}));
+
+export const plaidHoldingsRelations = relations(plaidHoldings, ({ one }) => ({
+  account: one(plaidAccounts, {
+    fields: [plaidHoldings.accountId],
+    references: [plaidAccounts.id],
+  }),
+}));
+
+export const plaidInvestmentTransactionsRelations = relations(plaidInvestmentTransactions, ({ one }) => ({
+  account: one(plaidAccounts, {
+    fields: [plaidInvestmentTransactions.accountId],
+    references: [plaidAccounts.id],
+  }),
+}));
+
+// Schemas for Plaid data insertion
+export const insertPlaidItemSchema = createInsertSchema(plaidItems, {
+  userId: z.string(),
+  itemId: z.string(),
+  accessToken: z.string(),
+  institutionId: z.string(),
+  institutionName: z.string(),
+  status: z.string().default("active"),
+  consentExpiresAt: z.date().optional(),
+});
+
+export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts, {
+  plaidItemId: z.number(),
+  accountId: z.string(),
+  name: z.string(),
+  type: z.string(),
+});
+
+export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
+  accountId: z.number(),
+  securityId: z.string(),
+  quantity: z.number(),
+});
+
+export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions, {
+  accountId: z.number(),
+  plaidTransactionId: z.string(),
+  type: z.string(),
+  date: z.date(),
+});
+
+// Types for Plaid database operations
+export type InsertPlaidItem = z.infer<typeof insertPlaidItemSchema>;
+export type PlaidItem = typeof plaidItems.$inferSelect;
+
+export type InsertPlaidAccount = z.infer<typeof insertPlaidAccountSchema>;
+export type PlaidAccount = typeof plaidAccounts.$inferSelect;
+
+export type InsertPlaidHolding = z.infer<typeof insertPlaidHoldingSchema>;
+export type PlaidHolding = typeof plaidHoldings.$inferSelect;
+
+export type InsertPlaidInvestmentTransaction = z.infer<typeof insertPlaidInvestmentTransactionSchema>;
+export type PlaidInvestmentTransaction = typeof plaidInvestmentTransactions.$inferSelect;
