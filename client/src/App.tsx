@@ -12,17 +12,18 @@ import MarketData from "@/pages/MarketData";
 import BehavioralBiasAnalyzer from "@/pages/BehavioralBiasAnalyzer";
 import Dashboard from "@/pages/Dashboard";
 import Navbar from "@/components/layout/Navbar";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/sentiment" component={SentimentAnalysis} />
-      <Route path="/stocks" component={StockAnalysis} />
-      <Route path="/recommendations" component={InvestmentRecommendations} />
-      <Route path="/market-data" component={MarketData} />
-      <Route path="/bias-analyzer" component={BehavioralBiasAnalyzer} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/sentiment" component={SentimentAnalysis} />
+      <ProtectedRoute path="/stocks" component={StockAnalysis} />
+      <ProtectedRoute path="/recommendations" component={InvestmentRecommendations} />
+      <ProtectedRoute path="/market-data" component={MarketData} />
+      <ProtectedRoute path="/bias-analyzer" component={BehavioralBiasAnalyzer} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,32 +1,44 @@
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export function AuthButton() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
+  // Show loading state while checking authentication
   if (isLoading) {
-    return <Button variant="ghost" size="sm" disabled>Loading...</Button>;
+    return (
+      <Button variant="ghost" size="sm" disabled>
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        Loading...
+      </Button>
+    );
   }
 
+  // If user is authenticated, show user menu
   if (isAuthenticated && user) {
+    const avatarSrc = user.profileImageUrl;
+    const displayName = user.firstName || user.email;
+    
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.profileImageUrl || ""} alt={user.firstName || "User"} />
+              <AvatarImage src={avatarSrc} alt={user.firstName || user.email || "User"} />
               <AvatarFallback>
-                {user.firstName?.charAt(0) || user.email?.charAt(0) || "U"}
+                {user.firstName ? user.firstName.charAt(0).toUpperCase() : 
+                  user.lastName ? user.lastName.charAt(0).toUpperCase() :
+                  user.email ? user.email.charAt(0).toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -34,44 +46,30 @@ export function AuthButton() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.email}
-              </p>
-              {user.email && (
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user.email}
-                </p>
-              )}
+              <p className="text-sm font-medium leading-none">{displayName}</p>
+              <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <a href="/dashboard" className="w-full">Dashboard</a>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              window.location.href = "/api/logout";
-            }}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+          <DropdownMenuItem>
+            <a href="/api/logout" className="w-full">Logout</a>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
   }
 
+  // If user is not authenticated, show login button
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => {
-        window.location.href = "/api/login";
-      }}
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => window.location.href = "/api/login"}
     >
-      Log in
+      Sign In
     </Button>
   );
 }
