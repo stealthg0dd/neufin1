@@ -9,10 +9,20 @@ import {
 import { storage } from '../../storage';
 import { formatDateForPlaid, formatDateForDisplay } from '../../utils/date-utils';
 
+// Type definitions for user auth
+type AuthenticatedRequest = Request & {
+  user?: {
+    claims?: {
+      sub: string;
+      [key: string]: any;
+    };
+  };
+};
+
 const router = Router();
 
 // Get a link token for initializing Plaid Link
-export async function getLinkToken(req: Request, res: Response) {
+export async function getLinkToken(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.claims?.sub;
     
@@ -29,7 +39,7 @@ export async function getLinkToken(req: Request, res: Response) {
 }
 
 // Exchange a public token for an access token and store it
-export async function exchangeToken(req: Request, res: Response) {
+export async function exchangeToken(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.claims?.sub;
     
@@ -80,7 +90,7 @@ export async function exchangeToken(req: Request, res: Response) {
 }
 
 // Get all connected accounts for the user
-export async function getConnectedAccounts(req: Request, res: Response) {
+export async function getConnectedAccounts(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.claims?.sub;
     
@@ -113,7 +123,7 @@ export async function getConnectedAccounts(req: Request, res: Response) {
 }
 
 // Get investment holdings for all user accounts
-export async function getInvestmentHoldingsForUser(req: Request, res: Response) {
+export async function getInvestmentHoldingsForUser(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.claims?.sub;
     
@@ -249,10 +259,9 @@ async function syncInvestmentHoldings(accountId: number, accessToken: string) {
         name: security.name,
         quantity: holding.quantity,
         costBasis: holding.cost_basis,
-        institutionPrice: holding.institution_price,
-        institutionValue: holding.institution_value,
-        isoCurrencyCode: holding.iso_currency_code,
-        unofficialCurrencyCode: holding.unofficial_currency_code
+        currentPrice: holding.institution_price,
+        currentValue: holding.institution_value,
+        isoCurrencyCode: holding.iso_currency_code
       });
     }
   } catch (error: any) {
