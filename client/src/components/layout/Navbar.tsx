@@ -11,48 +11,42 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link href="/">
-            <a className="flex items-center">
+            <div className="flex items-center cursor-pointer">
               <img 
                 src={logoPath} 
                 alt="Neufin Logo" 
                 className="h-10 mr-2"
               />
-            </a>
+            </div>
           </Link>
           
           <nav className="hidden md:flex items-center space-x-1">
             <Link href="/">
-              <a>
-                <Button 
-                  variant={location === "/" ? "default" : "ghost"} 
-                  className="text-sm h-9"
-                >
-                  <TrendingUp className="mr-1.5 h-4 w-4" />
-                  Home
-                </Button>
-              </a>
+              <Button 
+                variant={location === "/" ? "default" : "ghost"} 
+                className="text-sm h-9"
+              >
+                <TrendingUp className="mr-1.5 h-4 w-4" />
+                Home
+              </Button>
             </Link>
             <Link href="/sentiment">
-              <a>
-                <Button 
-                  variant={location === "/sentiment" ? "default" : "ghost"} 
-                  className="text-sm h-9"
-                >
-                  <Brain className="mr-1.5 h-4 w-4" />
-                  Sentiment
-                </Button>
-              </a>
+              <Button 
+                variant={location === "/sentiment" ? "default" : "ghost"} 
+                className="text-sm h-9"
+              >
+                <Brain className="mr-1.5 h-4 w-4" />
+                Sentiment
+              </Button>
             </Link>
             <Link href="/stocks">
-              <a>
-                <Button 
-                  variant={location === "/stocks" ? "default" : "ghost"} 
-                  className="text-sm h-9"
-                >
-                  <BarChart2 className="mr-1.5 h-4 w-4" />
-                  Stocks
-                </Button>
-              </a>
+              <Button 
+                variant={location === "/stocks" ? "default" : "ghost"} 
+                className="text-sm h-9"
+              >
+                <BarChart2 className="mr-1.5 h-4 w-4" />
+                Stocks
+              </Button>
             </Link>
           </nav>
         </div>

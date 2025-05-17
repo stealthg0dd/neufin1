@@ -105,17 +105,40 @@ export const investmentPreferencesRelations = relations(investmentPreferences, (
   }),
 }));
 
-// AI Recommendations
+// AI Recommendations (Neufin O2 Module)
 export const aiRecommendations = pgTable("ai_recommendations", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
   symbol: text("symbol").notNull(),
+  name: text("name"),
+  sector: text("sector"),
   recommendation: text("recommendation").notNull(), // buy, sell, hold
+  timeHorizon: text("time_horizon").notNull(), // short_term, mid_term, long_term
   confidenceScore: integer("confidence_score").notNull(), // 0-100
   rationale: text("rationale"),
-  targetPrice: doublePrecision("target_price"),
-  timeframe: text("timeframe"), // short_term, medium_term, long_term
+  aiThesis: text("ai_thesis"),
+  entryPriceLow: text("entry_price_low"),
+  entryPriceHigh: text("entry_price_high"), 
+  exitPriceLow: text("exit_price_low"),
+  exitPriceHigh: text("exit_price_high"),
+  riskRewardRatio: doublePrecision("risk_reward_ratio"),
+  volatilityIndex: doublePrecision("volatility_index"),
+  expectedReturn: doublePrecision("expected_return"),
+  suggestedAllocation: integer("suggested_allocation"),
+  sentiment: text("sentiment"), // bullish, neutral, bearish
+  technicalSignal: text("technical_signal"), // strong_buy, buy, neutral, sell, strong_sell
+  fundamentalRating: text("fundamental_rating"), // strong, good, fair, weak, poor
+  premium: boolean("premium").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const aiRecommendationsRelations = relations(aiRecommendations, ({ one }) => ({
+  user: one(users, {
+    fields: [aiRecommendations.userId],
+    references: [users.id],
+  }),
+}));
 
 // Behavioral Biases
 export const behavioralBiases = pgTable("behavioral_biases", {
@@ -184,13 +207,17 @@ export const insertInvestmentPreferenceSchema = createInsertSchema(investmentPre
   targetReturn: true,
 });
 
-export const insertAiRecommendationSchema = createInsertSchema(aiRecommendations).pick({
-  symbol: true,
-  recommendation: true,
-  confidenceScore: true,
-  rationale: true,
-  targetPrice: true,
-  timeframe: true,
+export const insertAiRecommendationSchema = createInsertSchema(aiRecommendations, {
+  timeHorizon: z.enum(['short_term', 'mid_term', 'long_term']),
+  recommendation: z.enum(['buy', 'sell', 'hold']),
+  sentiment: z.enum(['bullish', 'neutral', 'bearish']).optional(),
+  technicalSignal: z.enum(['strong_buy', 'buy', 'neutral', 'sell', 'strong_sell']).optional(),
+  fundamentalRating: z.enum(['strong', 'good', 'fair', 'weak', 'poor']).optional(),
+  premium: z.boolean().default(true)
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertBehavioralBiasSchema = createInsertSchema(behavioralBiases).pick({
