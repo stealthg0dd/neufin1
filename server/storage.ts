@@ -565,21 +565,32 @@ export class DatabaseStorage implements IStorage {
       );
     
     if (existingHolding) {
-      // Update existing holding
+      // Update existing holding  
+      const updateData = {
+        ...holding,
+      };
+      
+      // Remove lastUpdated as it's handled by the database with defaultNow()
+      delete updateData.lastUpdated;
+      
       const [updatedHolding] = await db
         .update(plaidHoldings)
-        .set({
-          ...holding,
-          lastUpdated: new Date()
-        })
+        .set(updateData)
         .where(eq(plaidHoldings.id, existingHolding.id))
         .returning();
       return updatedHolding;
     } else {
       // Create new holding
+      const insertData = {
+        ...holding
+      };
+      
+      // Remove lastUpdated field as it's handled by the database
+      delete insertData.lastUpdated;
+      
       const [newHolding] = await db
         .insert(plaidHoldings)
-        .values(holding)
+        .values(insertData)
         .returning();
       return newHolding;
     }

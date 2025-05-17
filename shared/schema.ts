@@ -771,9 +771,12 @@ export const plaidHoldings = pgTable("plaid_holdings", {
   name: text("name"),
   quantity: real("quantity").notNull(),
   costBasis: real("cost_basis"),
+  institutionPrice: real("institution_price"),
+  institutionValue: real("institution_value"),
   currentPrice: real("current_price"),
   currentValue: real("current_value"),
   isoCurrencyCode: text("iso_currency_code"),
+  unofficialCurrencyCode: text("unofficial_currency_code"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -860,9 +863,12 @@ export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
   name: z.string().nullable(),
   quantity: z.number(),
   costBasis: z.number().nullable(),
+  institutionPrice: z.number().nullable(),
+  institutionValue: z.number().nullable(),
   currentPrice: z.number().nullable(),
   currentValue: z.number().nullable(),
   isoCurrencyCode: z.string().nullable(),
+  unofficialCurrencyCode: z.string().nullable(),
   lastUpdated: z.date().optional(),
 });
 

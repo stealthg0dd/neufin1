@@ -261,9 +261,13 @@ async function syncInvestmentHoldings(accountId: number, accessToken: string) {
         name: security.name,
         quantity: holding.quantity,
         costBasis: holding.cost_basis,
+        institutionPrice: holding.institution_price,
+        institutionValue: holding.institution_value,
         currentPrice: holding.institution_price,
         currentValue: holding.institution_value,
-        isoCurrencyCode: holding.iso_currency_code
+        isoCurrencyCode: holding.iso_currency_code,
+        unofficialCurrencyCode: holding.unofficial_currency_code,
+        lastUpdated: new Date()
       });
     }
   } catch (error: any) {
