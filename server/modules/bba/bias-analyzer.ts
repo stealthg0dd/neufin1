@@ -999,7 +999,6 @@ export function getBiasEducationalContent(biasType: BiasType): BiasEducationalCo
       }
     ]
   };
-}
 
 /**
  * Get a user's bias profile with historical data
