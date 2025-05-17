@@ -129,7 +129,7 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
     description: 'Continuing an investment because of resources already committed, despite new evidence suggesting it is no longer optimal.',
     impact: 'Can lead to throwing good money after bad and holding losing investments too long.',
     examples: [
-      'Averaging down on losing positions just because you've already invested significantly.',
+      'Averaging down on losing positions just because you have already invested significantly.',
       'Refusing to exit a failed investment strategy because of the time already invested in it.',
       'Holding onto poor investments because "I've already lost so much, it can only go up from here."'
     ],
