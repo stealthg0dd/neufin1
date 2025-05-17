@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import sentientRouter from "./modules/sentient/controller";
 import nemoRouter from "./modules/nemo/controller";
 import { o2Router } from "./modules/o2/controller";
+import { marketDataRouter } from "./modules/market-data/controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for Neufin financial platform
@@ -16,6 +17,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount O2 Investment Recommendation API Router
   app.use("/api/o2", o2Router);
+  
+  // Mount Market Data API Router
+  app.use("/api/market-data", marketDataRouter);
   
   // Legacy Sentiment Analysis API Routes 
   // (These will be migrated to the Sentient module in the future)
