@@ -127,10 +127,11 @@ export default function BehavioralBiasAnalyzer() {
   const { data: analysisResult, isLoading: analysisLoading, refetch: runAnalysis } = useQuery({
     queryKey: ['bba', 'analyze', DEMO_USER_ID],
     queryFn: async () => {
-      const response = await apiRequest<BiasReport>('/api/bba/analyze', {
-        method: 'POST',
-        body: JSON.stringify({ userId: DEMO_USER_ID }),
-      });
+      const response = await apiRequest<BiasReport>(
+        '/api/bba/analyze', 
+        'POST',
+        { userId: DEMO_USER_ID }
+      );
       return response;
     },
     enabled: false, // Only run when explicitly triggered
@@ -140,10 +141,11 @@ export default function BehavioralBiasAnalyzer() {
   const { data: queryResponse, isLoading: queryLoading, refetch: submitQuery } = useQuery({
     queryKey: ['bba', 'query', query],
     queryFn: async () => {
-      const response = await apiRequest<NaturalLanguageQueryResponse>('/api/bba/query', {
-        method: 'POST',
-        body: JSON.stringify({ userId: DEMO_USER_ID, query }),
-      });
+      const response = await apiRequest<NaturalLanguageQueryResponse>(
+        '/api/bba/query', 
+        'POST',
+        { userId: DEMO_USER_ID, query }
+      );
       return response;
     },
     enabled: false, // Only run when explicitly triggered
