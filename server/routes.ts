@@ -6,6 +6,7 @@ import nemoRouter from "./modules/nemo/controller";
 import { o2Router } from "./modules/o2/controller";
 import { marketDataRouter } from "./modules/market-data/controller";
 import { bbaController } from "./modules/bba/controller";
+import plaidRouter from "./modules/plaid/controller";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -41,6 +42,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount Behavioral Bias Analyzer (BBA) API Router
   app.use("/api/bba", isAuthenticated, bbaController);
+  
+  // Mount Plaid API Router for investment account integration
+  app.use("/api/plaid", plaidRouter);
   
   // Legacy Sentiment Analysis API Routes 
   // (These will be migrated to the Sentient module in the future)

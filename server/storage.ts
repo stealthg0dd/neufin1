@@ -390,6 +390,222 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId.toString()));
     return user;
   }
+  
+  // Plaid integration - Items
+  async getPlaidItemsByUserId(userId: string): Promise<PlaidItem[]> {
+    return await db
+      .select()
+      .from(plaidItems)
+      .where(eq(plaidItems.userId, userId))
+      .orderBy(desc(plaidItems.lastUpdated));
+  }
+  
+  async getPlaidItemById(id: number): Promise<PlaidItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(plaidItems)
+      .where(eq(plaidItems.id, id));
+    return item;
+  }
+  
+  async getPlaidItemByItemId(itemId: string): Promise<PlaidItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(plaidItems)
+      .where(eq(plaidItems.itemId, itemId));
+    return item;
+  }
+  
+  async getPlaidItemByAccessToken(accessToken: string): Promise<PlaidItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(plaidItems)
+      .where(eq(plaidItems.accessToken, accessToken));
+    return item;
+  }
+  
+  async createPlaidItem(item: InsertPlaidItem): Promise<PlaidItem> {
+    const [newItem] = await db
+      .insert(plaidItems)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+  
+  async updatePlaidItemStatus(id: number, status: string, errorCode?: string, errorMessage?: string): Promise<PlaidItem> {
+    const [updatedItem] = await db
+      .update(plaidItems)
+      .set({
+        status,
+        errorCode,
+        errorMessage,
+        lastUpdated: new Date()
+      })
+      .where(eq(plaidItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deletePlaidItem(id: number): Promise<void> {
+    await db
+      .delete(plaidItems)
+      .where(eq(plaidItems.id, id));
+  }
+  
+  async getPlaidAccessTokensByUserId(userId: string): Promise<string[]> {
+    const items = await this.getPlaidItemsByUserId(userId);
+    return items.map(item => item.accessToken);
+  }
+  
+  // Plaid integration - Accounts
+  async getPlaidAccountsByItemId(itemId: number): Promise<PlaidAccount[]> {
+    return await db
+      .select()
+      .from(plaidAccounts)
+      .where(eq(plaidAccounts.plaidItemId, itemId))
+      .orderBy(desc(plaidAccounts.lastUpdated));
+  }
+  
+  async getPlaidAccountById(id: number): Promise<PlaidAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(plaidAccounts)
+      .where(eq(plaidAccounts.id, id));
+    return account;
+  }
+  
+  async getPlaidAccountByAccountId(accountId: string): Promise<PlaidAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(plaidAccounts)
+      .where(eq(plaidAccounts.accountId, accountId));
+    return account;
+  }
+  
+  async createPlaidAccount(account: InsertPlaidAccount): Promise<PlaidAccount> {
+    const [newAccount] = await db
+      .insert(plaidAccounts)
+      .values(account)
+      .returning();
+    return newAccount;
+  }
+  
+  async updatePlaidAccountStatus(id: number, status: string): Promise<PlaidAccount> {
+    const [updatedAccount] = await db
+      .update(plaidAccounts)
+      .set({
+        status,
+        lastUpdated: new Date()
+      })
+      .where(eq(plaidAccounts.id, id))
+      .returning();
+    return updatedAccount;
+  }
+  
+  // Plaid integration - Holdings
+  async getPlaidHoldingsByAccountId(accountId: number): Promise<PlaidHolding[]> {
+    return await db
+      .select()
+      .from(plaidHoldings)
+      .where(eq(plaidHoldings.accountId, accountId))
+      .orderBy(desc(plaidHoldings.lastUpdated));
+  }
+  
+  async getPlaidHoldingsBySymbol(userId: string, symbol: string): Promise<PlaidHolding[]> {
+    // This is more complex because we need to join tables
+    const items = await this.getPlaidItemsByUserId(userId);
+    
+    if (!items || items.length === 0) {
+      return [];
+    }
+    
+    const itemIds = items.map(item => item.id);
+    
+    // Get all accounts for these items
+    const accounts = await db
+      .select()
+      .from(plaidAccounts)
+      .where(
+        // In clause equivalent to check if plaidItemId is in the itemIds array
+        plaidAccounts.plaidItemId.in(itemIds)
+      );
+    
+    if (!accounts || accounts.length === 0) {
+      return [];
+    }
+    
+    const accountIds = accounts.map(account => account.id);
+    
+    // Get all holdings for these accounts with the matching symbol
+    return await db
+      .select()
+      .from(plaidHoldings)
+      .where(
+        and(
+          plaidHoldings.accountId.in(accountIds),
+          eq(plaidHoldings.symbol, symbol)
+        )
+      );
+  }
+  
+  async createOrUpdatePlaidHolding(holding: InsertPlaidHolding): Promise<PlaidHolding> {
+    // Check if holding already exists for this security_id and account_id
+    const [existingHolding] = await db
+      .select()
+      .from(plaidHoldings)
+      .where(
+        and(
+          eq(plaidHoldings.securityId, holding.securityId),
+          eq(plaidHoldings.accountId, holding.accountId)
+        )
+      );
+    
+    if (existingHolding) {
+      // Update existing holding
+      const [updatedHolding] = await db
+        .update(plaidHoldings)
+        .set({
+          ...holding,
+          lastUpdated: new Date()
+        })
+        .where(eq(plaidHoldings.id, existingHolding.id))
+        .returning();
+      return updatedHolding;
+    } else {
+      // Create new holding
+      const [newHolding] = await db
+        .insert(plaidHoldings)
+        .values(holding)
+        .returning();
+      return newHolding;
+    }
+  }
+  
+  // Plaid integration - Investment Transactions
+  async getPlaidInvestmentTransactionsByAccountId(accountId: number, limit: number = 50): Promise<PlaidInvestmentTransaction[]> {
+    return await db
+      .select()
+      .from(plaidInvestmentTransactions)
+      .where(eq(plaidInvestmentTransactions.accountId, accountId))
+      .orderBy(desc(plaidInvestmentTransactions.date))
+      .limit(limit);
+  }
+  
+  async getPlaidInvestmentTransactionByPlaidId(plaidTransactionId: string): Promise<PlaidInvestmentTransaction | undefined> {
+    const [transaction] = await db
+      .select()
+      .from(plaidInvestmentTransactions)
+      .where(eq(plaidInvestmentTransactions.plaidTransactionId, plaidTransactionId));
+    return transaction;
+  }
+  
+  async createPlaidInvestmentTransaction(transaction: InsertPlaidInvestmentTransaction): Promise<PlaidInvestmentTransaction> {
+    const [newTransaction] = await db
+      .insert(plaidInvestmentTransactions)
+      .values(transaction)
+      .returning();
+    return newTransaction;
+  }
 }
 
 // Use the database storage implementation
