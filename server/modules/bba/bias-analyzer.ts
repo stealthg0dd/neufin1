@@ -126,7 +126,7 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
   sunk_cost_fallacy: {
     id: 'sunk_cost_fallacy',
     name: 'Sunk Cost Fallacy',
-    description: 'Continuing an investment because of resources already committed, despite new evidence suggesting it's no longer optimal.',
+    description: 'Continuing an investment because of resources already committed, despite new evidence suggesting it is no longer optimal.',
     impact: 'Can lead to throwing good money after bad and holding losing investments too long.',
     examples: [
       'Averaging down on losing positions just because you've already invested significantly.',
