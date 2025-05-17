@@ -9,22 +9,38 @@ import { bbaController } from "./modules/bba/controller";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // API routes for Neufin financial platform
+  // Set up authentication
+  await setupAuth(app);
+  
+  // Authentication routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Protected API routes for Neufin financial platform
+  // Use isAuthenticated middleware for routes that require authentication
   
   // Mount Sentient API Router
-  app.use("/api/sentient", sentientRouter);
+  app.use("/api/sentient", isAuthenticated, sentientRouter);
   
   // Mount Nemo API Router
-  app.use("/api/nemo", nemoRouter);
+  app.use("/api/nemo", isAuthenticated, nemoRouter);
   
   // Mount O2 Investment Recommendation API Router
-  app.use("/api/o2", o2Router);
+  app.use("/api/o2", isAuthenticated, o2Router);
   
   // Mount Market Data API Router
-  app.use("/api/market-data", marketDataRouter);
+  app.use("/api/market-data", isAuthenticated, marketDataRouter);
   
   // Mount Behavioral Bias Analyzer (BBA) API Router
-  app.use("/api/bba", bbaController);
+  app.use("/api/bba", isAuthenticated, bbaController);
   
   // Legacy Sentiment Analysis API Routes 
   // (These will be migrated to the Sentient module in the future)

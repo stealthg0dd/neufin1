@@ -1,10 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3, PieChart, LayoutDashboard } from "lucide-react";
+import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3, PieChart, LayoutDashboard, Menu } from "lucide-react";
 import logoPath from "@assets/neufin tagline bare logo.png";
+import { AuthButton } from "./AuthButton";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const [location] = useLocation();
+  const { isAuthenticated } = useAuth();
   
   return (
     <header className="border-b sticky top-0 bg-white z-10">
@@ -88,16 +91,19 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="hidden sm:flex">
-            Sign In
-          </Button>
-          <Button size="sm" className="hidden sm:flex">
-            Get Started
-          </Button>
+          <div className="hidden sm:block">
+            <AuthButton />
+          </div>
+          
+          {!isAuthenticated && (
+            <Button size="sm" className="hidden sm:flex">
+              Get Started
+            </Button>
+          )}
           
           {/* Mobile menu button (could be expanded with a proper mobile menu) */}
           <Button variant="ghost" size="sm" className="md:hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            <Menu className="h-5 w-5" />
           </Button>
         </div>
       </div>
