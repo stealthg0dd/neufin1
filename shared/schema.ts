@@ -1,11 +1,25 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, doublePrecision, jsonb, decimal, varchar } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  integer,
+  serial,
+  text,
+  timestamp,
+  json,
+  boolean,
+  real,
+  doublePrecision,
+  date,
+  jsonb,
+  varchar,
+  index
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
 
-// User management
+// Users Schema
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), // We're using Google Auth's sub as the ID
+  id: text("id").primaryKey().notNull(),
   email: text("email").unique(),
   firstName: text("first_name"),
   lastName: text("last_name"),
@@ -13,10 +27,8 @@ export const users = pgTable("users", {
   username: text("username").unique(),
   password: text("password"),
   role: text("role").default("user"),
-  biasScore: integer("bias_score"), // Overall bias score for BBA module
-  biasFlags: jsonb("bias_flags"), // JSON array of active bias flags
-  hasPremium: boolean("has_premium").default(false), // Flag for premium features
-  subscriptionTier: text("subscription_tier").default("free"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -25,15 +37,20 @@ export const userRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   sentimentAlerts: many(sentimentAlerts),
   investmentPreferences: many(investmentPreferences),
+  aiRecommendations: many(aiRecommendations),
+  userTrades: many(userTrades),
   behavioralBiases: many(behavioralBiases),
+  biasAnalysisReports: many(biasAnalysisReports),
+  plaidItems: many(plaidItems),
 }));
 
-// Portfolios
+// Portfolios Schema
 export const portfolios = pgTable("portfolios", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: text("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   description: text("description"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -46,15 +63,17 @@ export const portfolioRelations = relations(portfolios, ({ one, many }) => ({
   holdings: many(portfolioHoldings),
 }));
 
-// Portfolio Holdings
 export const portfolioHoldings = pgTable("portfolio_holdings", {
   id: serial("id").primaryKey(),
   portfolioId: integer("portfolio_id").notNull().references(() => portfolios.id),
   symbol: text("symbol").notNull(),
   shares: real("shares").notNull(),
-  averageCost: doublePrecision("average_cost").notNull(),
-  currentValue: doublePrecision("current_value"),
-  purchaseDate: timestamp("purchase_date").defaultNow(),
+  averagePrice: real("average_price").notNull(),
+  currentPrice: real("current_price"),
+  currentValue: real("current_value"),
+  costBasis: real("cost_basis"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const portfolioHoldingsRelations = relations(portfolioHoldings, ({ one }) => ({
@@ -64,26 +83,28 @@ export const portfolioHoldingsRelations = relations(portfolioHoldings, ({ one })
   }),
 }));
 
-// Market Sentiment
+// Sentiment Analysis Schema
 export const marketSentiment = pgTable("market_sentiment", {
   id: serial("id").primaryKey(),
   symbol: text("symbol").notNull(),
-  sentimentScore: integer("sentiment_score").notNull(), // 0-100 score
+  score: integer("score").notNull(), // 0-100 scale
   status: text("status").notNull(), // positive, negative, neutral
   source: text("source").notNull(), // news, social, analyst
+  direction: text("direction"), // up, down, neutral
+  change: real("change"), // change in sentiment score
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  details: jsonb("details"), // Additional details like keywords, sources
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Sentiment Alerts
 export const sentimentAlerts = pgTable("sentiment_alerts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: text("user_id").notNull().references(() => users.id),
   symbol: text("symbol").notNull(),
-  threshold: integer("threshold").notNull(), // Trigger when sentiment crosses this value
+  threshold: integer("threshold").notNull(), // 0-100 scale
   direction: text("direction").notNull(), // above, below
-  active: boolean("active").default(true),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const sentimentAlertsRelations = relations(sentimentAlerts, ({ one }) => ({
@@ -93,15 +114,18 @@ export const sentimentAlertsRelations = relations(sentimentAlerts, ({ one }) => 
   }),
 }));
 
-// Investment Preferences
+// Investment Preferences Schema
 export const investmentPreferences = pgTable("investment_preferences", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  riskTolerance: text("risk_tolerance").notNull(), // conservative, moderate, aggressive
+  userId: text("user_id").notNull().references(() => users.id),
+  riskTolerance: text("risk_tolerance").notNull(), // low, moderate, high
   investmentHorizon: text("investment_horizon").notNull(), // short, medium, long
-  preferredSectors: jsonb("preferred_sectors"), // Array of sectors
-  excludedSectors: jsonb("excluded_sectors"), // Array of excluded sectors
-  targetReturn: real("target_return"), // Target annual return percentage
+  goals: json("goals").$type<string[]>(),
+  preferredSectors: json("preferred_sectors").$type<string[]>(),
+  excludedSectors: json("excluded_sectors").$type<string[]>(),
+  preferredAssetClasses: json("preferred_asset_classes").$type<string[]>(),
+  monthlyContribution: real("monthly_contribution"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -112,32 +136,19 @@ export const investmentPreferencesRelations = relations(investmentPreferences, (
   }),
 }));
 
-// AI Recommendations (Neufin O2 Module)
+// AI Recommendations Schema
 export const aiRecommendations = pgTable("ai_recommendations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: text("user_id").notNull().references(() => users.id),
   symbol: text("symbol").notNull(),
-  name: text("name"),
-  sector: text("sector"),
   recommendation: text("recommendation").notNull(), // buy, sell, hold
-  timeHorizon: text("time_horizon").notNull(), // short_term, mid_term, long_term
-  confidenceScore: integer("confidence_score").notNull(), // 0-100
-  rationale: text("rationale"),
-  aiThesis: text("ai_thesis"),
-  entryPriceLow: text("entry_price_low"),
-  entryPriceHigh: text("entry_price_high"), 
-  exitPriceLow: text("exit_price_low"),
-  exitPriceHigh: text("exit_price_high"),
-  riskRewardRatio: doublePrecision("risk_reward_ratio"),
-  volatilityIndex: doublePrecision("volatility_index"),
-  expectedReturn: doublePrecision("expected_return"),
-  suggestedAllocation: integer("suggested_allocation"),
-  sentiment: text("sentiment"), // bullish, neutral, bearish
-  technicalSignal: text("technical_signal"), // strong_buy, buy, neutral, sell, strong_sell
-  fundamentalRating: text("fundamental_rating"), // strong, good, fair, weak, poor
-  premium: boolean("premium").default(true),
+  confidence: real("confidence").notNull(), // 0-1 scale
+  reasoning: text("reasoning").notNull(),
+  targetPrice: real("target_price"),
+  timeHorizon: text("time_horizon"), // short, medium, long
+  sentiment: text("sentiment"), // positive, negative, neutral
+  aiModel: text("ai_model").notNull(), // which AI model generated this
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const aiRecommendationsRelations = relations(aiRecommendations, ({ one }) => ({
@@ -147,19 +158,18 @@ export const aiRecommendationsRelations = relations(aiRecommendations, ({ one })
   }),
 }));
 
-// User Trades (for BBA analysis)
+// User Trades Schema
 export const userTrades = pgTable("user_trades", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: text("user_id").notNull().references(() => users.id),
   symbol: text("symbol").notNull(),
   action: text("action").notNull(), // buy, sell
   shares: real("shares").notNull(),
-  price: doublePrecision("price").notNull(),
-  tradeDate: timestamp("trade_date").defaultNow().notNull(),
-  notes: text("notes"),
-  emotionalState: text("emotional_state"), // excited, fearful, confident, etc.
-  marketContext: jsonb("market_context"), // market conditions, news events
-  tradingStrategy: text("trading_strategy"), // swing, day-trade, long-term, etc.
+  price: real("price").notNull(),
+  fees: real("fees"),
+  total: real("total").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -170,19 +180,15 @@ export const userTradesRelations = relations(userTrades, ({ one }) => ({
   }),
 }));
 
-// Behavioral Biases
+// Behavioral Bias Schema
 export const behavioralBiases = pgTable("behavioral_biases", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  biasType: text("bias_type").notNull(), // loss_aversion, confirmation_bias, etc.
-  score: integer("score").notNull(), // 0-100 score indicating strength of bias
-  impact: text("impact").notNull(), // low, medium, high
-  suggestion: text("suggestion"), // Corrective suggestion
-  description: text("description"), // Detailed description of the bias
-  detectionDate: timestamp("detection_date").defaultNow().notNull(),
-  metadata: jsonb("metadata"), // Additional context for detection
-  evidence: jsonb("evidence"), // Array of examples that led to detection
-  premium: boolean("premium").default(false), // If this is a premium insight
+  userId: text("user_id").notNull().references(() => users.id),
+  biasType: text("bias_type").notNull(), // loss_aversion, recency, confirmation, etc.
+  score: integer("score"), // 0-100 scale of bias intensity
+  impactLevel: text("impact_level"), // low, medium, high
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const behavioralBiasesRelations = relations(behavioralBiases, ({ one }) => ({
@@ -192,19 +198,12 @@ export const behavioralBiasesRelations = relations(behavioralBiases, ({ one }) =
   }),
 }));
 
-// Bias Analysis Reports (aggregated reports)
 export const biasAnalysisReports = pgTable("bias_analysis_reports", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  summary: text("summary").notNull(),
-  details: jsonb("details").notNull(), // Detailed analysis in JSON format
-  primaryBiases: jsonb("primary_biases").notNull(), // Array of main biases
-  overallScore: integer("overall_score").notNull(), // 0-100 score
-  improvementSuggestions: jsonb("improvement_suggestions"), // Array of actionable items
+  userId: text("user_id").notNull().references(() => users.id),
+  reportData: json("report_data").notNull(),
+  suggestions: json("suggestions").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  analysisType: text("analysis_type").default("standard"), // standard, deep, premium
-  comparisonData: jsonb("comparison_data"), // Bias-free portfolio comparison
 });
 
 export const biasAnalysisReportsRelations = relations(biasAnalysisReports, ({ one }) => ({
@@ -214,18 +213,22 @@ export const biasAnalysisReportsRelations = relations(biasAnalysisReports, ({ on
   }),
 }));
 
-// Schema definitions for Zod validation
+// Zod validation schemas for inserting data
 export const insertUserSchema = createInsertSchema(users).pick({
+  email: true,
+  firstName: true,
+  lastName: true,
+  profileImageUrl: true,
   username: true,
   password: true,
-  email: true,
   role: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
 });
 
-// Google OAuth user schema
 export const upsertUserSchema = createInsertSchema(users).pick({
   id: true,
-  email: true, 
+  email: true,
   firstName: true,
   lastName: true,
   profileImageUrl: true,
@@ -235,23 +238,26 @@ export const insertPortfolioSchema = createInsertSchema(portfolios).pick({
   userId: true,
   name: true,
   description: true,
+  isActive: true,
 });
 
 export const insertPortfolioHoldingSchema = createInsertSchema(portfolioHoldings).pick({
   portfolioId: true,
   symbol: true,
   shares: true,
-  averageCost: true,
+  averagePrice: true,
+  currentPrice: true,
   currentValue: true,
-  purchaseDate: true,
+  costBasis: true,
 });
 
 export const insertMarketSentimentSchema = createInsertSchema(marketSentiment).pick({
   symbol: true,
-  sentimentScore: true,
+  score: true,
   status: true,
   source: true,
-  details: true,
+  direction: true,
+  change: true,
 });
 
 export const insertSentimentAlertSchema = createInsertSchema(sentimentAlerts).pick({
@@ -259,29 +265,32 @@ export const insertSentimentAlertSchema = createInsertSchema(sentimentAlerts).pi
   symbol: true,
   threshold: true,
   direction: true,
-  active: true,
+  isActive: true,
 });
 
 export const insertInvestmentPreferenceSchema = createInsertSchema(investmentPreferences).pick({
   userId: true,
   riskTolerance: true,
   investmentHorizon: true,
+  goals: true,
   preferredSectors: true,
   excludedSectors: true,
-  targetReturn: true,
+  preferredAssetClasses: true,
+  monthlyContribution: true,
 });
 
 export const insertAiRecommendationSchema = createInsertSchema(aiRecommendations, {
-  timeHorizon: z.enum(['short_term', 'mid_term', 'long_term']),
-  recommendation: z.enum(['buy', 'sell', 'hold']),
-  sentiment: z.enum(['bullish', 'neutral', 'bearish']).optional(),
-  technicalSignal: z.enum(['strong_buy', 'buy', 'neutral', 'sell', 'strong_sell']).optional(),
-  fundamentalRating: z.enum(['strong', 'good', 'fair', 'weak', 'poor']).optional(),
-  premium: z.boolean().default(true)
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+  confidence: z.number().min(0).max(1),
+}).pick({
+  userId: true,
+  symbol: true,
+  recommendation: true,
+  confidence: true,
+  reasoning: true,
+  targetPrice: true,
+  timeHorizon: true,
+  sentiment: true,
+  aiModel: true,
 });
 
 export const insertUserTradeSchema = createInsertSchema(userTrades).pick({
@@ -290,38 +299,25 @@ export const insertUserTradeSchema = createInsertSchema(userTrades).pick({
   action: true,
   shares: true,
   price: true,
-  tradeDate: true,
-  notes: true,
-  emotionalState: true,
-  marketContext: true,
-  tradingStrategy: true,
+  fees: true,
+  total: true,
+  note: true,
 });
 
 export const insertBehavioralBiasSchema = createInsertSchema(behavioralBiases).pick({
   userId: true,
   biasType: true,
   score: true,
-  impact: true, 
-  suggestion: true,
-  description: true,
-  metadata: true,
-  evidence: true,
-  premium: true,
+  impactLevel: true,
 });
 
 export const insertBiasAnalysisReportSchema = createInsertSchema(biasAnalysisReports).pick({
   userId: true,
-  title: true,
-  summary: true,
-  details: true,
-  primaryBiases: true,
-  overallScore: true,
-  improvementSuggestions: true,
-  analysisType: true,
-  comparisonData: true,
+  reportData: true,
+  suggestions: true,
 });
 
-// Type definitions
+// Type definitions for database operations
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -353,348 +349,45 @@ export type BehavioralBias = typeof behavioralBiases.$inferSelect;
 export type InsertBiasAnalysisReport = z.infer<typeof insertBiasAnalysisReportSchema>;
 export type BiasAnalysisReport = typeof biasAnalysisReports.$inferSelect;
 
-// Session storage table for persistent auth sessions
+// Session storage table for auth
 export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
-  }
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
-// Note: Plaid Integration Schema is defined further down in this file
-
-export const plaidInvestmentTransactions = pgTable("plaid_investment_transactions", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
-  plaidTransactionId: text("plaid_transaction_id").notNull().unique(),
-  securityId: text("security_id"),
-  name: text("name"),
-  symbol: text("symbol"),
-  amount: doublePrecision("amount").notNull(),
-  quantity: real("quantity"),
-  price: doublePrecision("price"),
-  fees: doublePrecision("fees"),
-  type: text("type"), // buy, sell, dividend, etc.
-  subtype: text("subtype"),
-  date: timestamp("date").notNull(),
-  isoCurrencyCode: text("iso_currency_code"),
-  unofficialCurrencyCode: text("unofficial_currency_code"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const plaidInvestmentTransactionsRelations = relations(plaidInvestmentTransactions, ({ one }) => ({
-  account: one(plaidAccounts, {
-    fields: [plaidInvestmentTransactions.accountId],
-    references: [plaidAccounts.id],
-  }),
-}));
-
-// Plaid Schema Insert Types
-export const insertPlaidItemSchema = createInsertSchema(plaidItems).pick({
-  userId: true,
-  accessToken: true,
-  itemId: true,
-  institutionId: true,
-  institutionName: true,
-  status: true,
-  errorCode: true,
-  errorMessage: true,
-});
-
-export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts).pick({
-  plaidItemId: true,
-  accountId: true,
-  name: true,
-  mask: true,
-  officialName: true,
-  type: true,
-  subtype: true,
-  status: true,
-});
-
-export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings).pick({
-  accountId: true,
-  securityId: true,
-  symbol: true,
-  name: true,
-  quantity: true,
-  costBasis: true,
-  currentPrice: true,
-  currentValue: true,
-  isoCurrencyCode: true,
-});
-
-export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions).pick({
-  accountId: true,
-  plaidTransactionId: true,
-  securityId: true,
-  name: true,
-  symbol: true,
-  amount: true,
-  quantity: true,
-  price: true,
-  fees: true,
-  type: true,
-  subtype: true,
-  date: true,
-  isoCurrencyCode: true,
-  unofficialCurrencyCode: true,
-});
-
-// Plaid Type Exports
-export type InsertPlaidItem = z.infer<typeof insertPlaidItemSchema>;
-export type PlaidItem = typeof plaidItems.$inferSelect;
-
-export type InsertPlaidAccount = z.infer<typeof insertPlaidAccountSchema>;
-export type PlaidAccount = typeof plaidAccounts.$inferSelect;
-
-export type InsertPlaidHolding = z.infer<typeof insertPlaidHoldingSchema>;
-export type PlaidHolding = typeof plaidHoldings.$inferSelect;
-
-export type InsertPlaidInvestmentTransaction = z.infer<typeof insertPlaidInvestmentTransactionSchema>;
-export type PlaidInvestmentTransaction = typeof plaidInvestmentTransactions.$inferSelect;
-
-// Update user relations to include Plaid items
-export const userRelationsWithPlaid = relations(users, ({ many }) => ({
-  portfolios: many(portfolios),
-  sentimentAlerts: many(sentimentAlerts),
-  investmentPreferences: many(investmentPreferences),
-  behavioralBiases: many(behavioralBiases),
-  plaidItems: many(plaidItems),
-}));
-
-// Neufin Nemo (Stock Intelligence) Schema
-
-export const stocks = pgTable("stocks", {
-  id: serial("id").primaryKey(),
-  symbol: text("symbol").notNull(),
-  name: text("name").notNull(),
-  sector: text("sector"),
-  industry: text("industry"),
-  marketCap: decimal("market_cap"),
-  peRatio: decimal("pe_ratio"),
-  dividendYield: decimal("dividend_yield"),
-  beta: decimal("beta"),
-  fiftyTwoWeekHigh: decimal("fifty_two_week_high"),
-  fiftyTwoWeekLow: decimal("fifty_two_week_low"),
-  averageVolume: integer("average_volume"),
-  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const stockPrices = pgTable("stock_prices", {
-  id: serial("id").primaryKey(),
-  stockId: integer("stock_id").references(() => stocks.id).notNull(),
-  date: timestamp("date").notNull(),
-  open: decimal("open").notNull(),
-  high: decimal("high").notNull(),
-  low: decimal("low").notNull(),
-  close: decimal("close").notNull(),
-  adjustedClose: decimal("adjusted_close"),
-  volume: integer("volume").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const stockIndicators = pgTable("stock_indicators", {
-  id: serial("id").primaryKey(),
-  stockId: integer("stock_id").references(() => stocks.id).notNull(),
-  date: timestamp("date").notNull(),
-  rsi14: decimal("rsi_14"),
-  macd: decimal("macd"),
-  macdSignal: decimal("macd_signal"),
-  macdHistogram: decimal("macd_histogram"),
-  ema20: decimal("ema_20"),
-  ema50: decimal("ema_50"),
-  ema200: decimal("ema_200"),
-  sma20: decimal("sma_20"),
-  sma50: decimal("sma_50"),
-  sma200: decimal("sma_200"),
-  bollingerUpper: decimal("bollinger_upper"),
-  bollingerMiddle: decimal("bollinger_middle"),
-  bollingerLower: decimal("bollinger_lower"),
-  momentum: decimal("momentum"),
-  volatility: decimal("volatility"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const stockAlerts = pgTable("stock_alerts", {
-  id: serial("id").primaryKey(),
-  stockId: integer("stock_id").references(() => stocks.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  alertType: text("alert_type").notNull(), // breakout, volatility, price_target, etc.
-  threshold: decimal("threshold"),
-  triggered: boolean("triggered").notNull().default(false),
-  message: text("message"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const stockAnalysis = pgTable("stock_analysis", {
-  id: serial("id").primaryKey(),
-  stockId: integer("stock_id").references(() => stocks.id).notNull(),
-  date: timestamp("date").notNull().defaultNow(),
-  shortTermOutlook: text("short_term_outlook"), // bullish, bearish, neutral
-  longTermOutlook: text("long_term_outlook"), // bullish, bearish, neutral
-  supportLevels: jsonb("support_levels"), // array of price points
-  resistanceLevels: jsonb("resistance_levels"), // array of price points
-  keyEvents: jsonb("key_events"), // array of events
-  aiSummary: text("ai_summary"), // Claude-generated summary
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const stocksRelations = relations(stocks, ({ many }) => ({
-  prices: many(stockPrices),
-  indicators: many(stockIndicators),
-  alerts: many(stockAlerts),
-  analyses: many(stockAnalysis),
-}));
-
-export const stockPricesRelations = relations(stockPrices, ({ one }) => ({
-  stock: one(stocks, {
-    fields: [stockPrices.stockId],
-    references: [stocks.id],
-  }),
-}));
-
-export const stockIndicatorsRelations = relations(stockIndicators, ({ one }) => ({
-  stock: one(stocks, {
-    fields: [stockIndicators.stockId],
-    references: [stocks.id],
-  }),
-}));
-
-export const stockAlertsRelations = relations(stockAlerts, ({ one }) => ({
-  stock: one(stocks, {
-    fields: [stockAlerts.stockId],
-    references: [stocks.id],
-  }),
-  user: one(users, {
-    fields: [stockAlerts.userId],
-    references: [users.id],
-  }),
-}));
-
-export const stockAnalysisRelations = relations(stockAnalysis, ({ one }) => ({
-  stock: one(stocks, {
-    fields: [stockAnalysis.stockId],
-    references: [stocks.id],
-  }),
-}));
-
-// Schema definitions for insert operations
-export const insertStockSchema = createInsertSchema(stocks, {
-  symbol: z.string(),
-  name: z.string(),
-  sector: z.string().optional(),
-  industry: z.string().optional(),
-  marketCap: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  peRatio: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  dividendYield: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  beta: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  fiftyTwoWeekHigh: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  fiftyTwoWeekLow: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  averageVolume: z.number().optional(),
-  metadata: z.any().optional(),
-});
-
-export const insertStockPriceSchema = createInsertSchema(stockPrices, {
-  stockId: z.number(),
-  date: z.date(),
-  open: z.string().or(z.number()).transform(val => val.toString()),
-  high: z.string().or(z.number()).transform(val => val.toString()),
-  low: z.string().or(z.number()).transform(val => val.toString()),
-  close: z.string().or(z.number()).transform(val => val.toString()),
-  adjustedClose: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  volume: z.number()
-});
-
-export const insertStockIndicatorSchema = createInsertSchema(stockIndicators, {
-  stockId: z.number(),
-  date: z.date(),
-  rsi14: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  macd: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  macdSignal: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  macdHistogram: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  ema20: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  ema50: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  ema200: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  sma20: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  sma50: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  sma200: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  bollingerUpper: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  bollingerMiddle: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  bollingerLower: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  momentum: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  volatility: z.string().or(z.number()).optional().transform(val => val?.toString())
-});
-
-export const insertStockAlertSchema = createInsertSchema(stockAlerts, {
-  stockId: z.number(),
-  userId: z.number(),
-  alertType: z.string(),
-  threshold: z.string().or(z.number()).optional().transform(val => val?.toString()),
-  triggered: z.boolean().default(false),
-  message: z.string().optional()
-});
-
-export const insertStockAnalysisSchema = createInsertSchema(stockAnalysis, {
-  stockId: z.number(),
-  date: z.date().default(() => new Date()),
-  shortTermOutlook: z.string().optional(),
-  longTermOutlook: z.string().optional(),
-  supportLevels: z.any().optional(),
-  resistanceLevels: z.any().optional(),
-  keyEvents: z.any().optional(),
-  aiSummary: z.string().optional()
-});
-
-// Types for database operations
-export type InsertStock = z.infer<typeof insertStockSchema>;
-export type Stock = typeof stocks.$inferSelect;
-
-export type InsertStockPrice = z.infer<typeof insertStockPriceSchema>;
-export type StockPrice = typeof stockPrices.$inferSelect;
-
-export type InsertStockIndicator = z.infer<typeof insertStockIndicatorSchema>;
-export type StockIndicator = typeof stockIndicators.$inferSelect;
-
-export type InsertStockAlert = z.infer<typeof insertStockAlertSchema>;
-export type StockAlert = typeof stockAlerts.$inferSelect;
-
-export type InsertStockAnalysis = z.infer<typeof insertStockAnalysisSchema>;
-export type StockAnalysis = typeof stockAnalysis.$inferSelect;
-
-// Plaid Integration Tables
+// Plaid Integration Schema
 export const plaidItems = pgTable("plaid_items", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
-  itemId: text("item_id").notNull().unique(), // Plaid's item_id
-  accessToken: text("access_token").notNull(), // Plaid access token (should be encrypted in production)
+  accessToken: text("access_token").notNull(),
+  itemId: text("item_id").notNull().unique(),
   institutionId: text("institution_id").notNull(),
   institutionName: text("institution_name").notNull(),
   status: text("status").notNull().default("active"), // active, error, disconnected
-  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),
   consentExpiresAt: timestamp("consent_expires_at"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const plaidAccounts = pgTable("plaid_accounts", {
   id: serial("id").primaryKey(),
   plaidItemId: integer("plaid_item_id").notNull().references(() => plaidItems.id),
-  accountId: text("account_id").notNull().unique(), // Plaid's account_id
+  accountId: text("account_id").notNull().unique(),
   name: text("name").notNull(),
   mask: text("mask"),
   officialName: text("official_name"),
-  type: text("type").notNull(), // investment, depository, credit, loan, etc.
-  subtype: text("subtype"), // 401k, brokerage, mutual fund, etc.
+  type: text("type").notNull(), // investment, credit, depository, etc.
+  subtype: text("subtype"),
   status: text("status").notNull().default("active"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(), 
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const plaidHoldings = pgTable("plaid_holdings", {
@@ -704,11 +397,9 @@ export const plaidHoldings = pgTable("plaid_holdings", {
   symbol: text("symbol"),
   name: text("name"),
   quantity: real("quantity").notNull(),
-  costBasis: real("cost_basis"),
-  institutionPrice: real("institution_price"),
-  institutionValue: real("institution_value"),
-  currentPrice: real("current_price"),
-  currentValue: real("current_value"),
+  costBasis: doublePrecision("cost_basis"),
+  currentPrice: doublePrecision("current_price"), // institutionPrice in Plaid
+  currentValue: doublePrecision("current_value"), // institutionValue in Plaid
   isoCurrencyCode: text("iso_currency_code"),
   unofficialCurrencyCode: text("unofficial_currency_code"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
@@ -723,12 +414,13 @@ export const plaidInvestmentTransactions = pgTable("plaid_investment_transaction
   symbol: text("symbol"),
   name: text("name"),
   type: text("type").notNull(), // buy, sell, dividend, etc.
-  amount: real("amount"),
+  amount: real("amount").notNull(),
   price: real("price"),
   quantity: real("quantity"),
   fees: real("fees"),
-  date: timestamp("date").notNull(),
+  date: date("date").notNull(),
   isoCurrencyCode: text("iso_currency_code"),
+  unofficialCurrencyCode: text("unofficial_currency_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -764,56 +456,16 @@ export const plaidInvestmentTransactionsRelations = relations(plaidInvestmentTra
   }),
 }));
 
-// Schemas for Plaid data insertion
-export const insertPlaidItemSchema = createInsertSchema(plaidItems, {
-  userId: z.string(),
-  itemId: z.string(),
-  accessToken: z.string(),
-  institutionId: z.string(),
-  institutionName: z.string(),
-  status: z.string().default("active"),
-  lastUpdated: z.date().optional(),
-  consentExpiresAt: z.date().optional(),
-  errorCode: z.string().nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
+// Insert schemas for Plaid
+export const insertPlaidItemSchema = createInsertSchema(plaidItems);
 
-export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts, {
-  plaidItemId: z.number(),
-  accountId: z.string(),
-  name: z.string(),
-  type: z.string(),
-  mask: z.string().nullable().optional(),
-  officialName: z.string().nullable().optional(),
-  subtype: z.string().nullable().optional(),
-  status: z.string().default("active"),
-  lastUpdated: z.date().optional(),
-});
+export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts);
 
-export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
-  accountId: z.number(),
-  securityId: z.string(),
-  symbol: z.string().nullable(),
-  name: z.string().nullable(),
-  quantity: z.number(),
-  costBasis: z.number().nullable(),
-  institutionPrice: z.number().nullable(),
-  institutionValue: z.number().nullable(),
-  currentPrice: z.number().nullable(),
-  currentValue: z.number().nullable(),
-  isoCurrencyCode: z.string().nullable(),
-  unofficialCurrencyCode: z.string().nullable(),
-  lastUpdated: z.date().optional(),
-});
+export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings);
 
-export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions, {
-  accountId: z.number(),
-  plaidTransactionId: z.string(),
-  type: z.string(),
-  date: z.date(),
-});
+export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions);
 
-// Types for Plaid database operations
+// Types for Plaid
 export type InsertPlaidItem = z.infer<typeof insertPlaidItemSchema>;
 export type PlaidItem = typeof plaidItems.$inferSelect;
 
@@ -825,3 +477,171 @@ export type PlaidHolding = typeof plaidHoldings.$inferSelect;
 
 export type InsertPlaidInvestmentTransaction = z.infer<typeof insertPlaidInvestmentTransactionSchema>;
 export type PlaidInvestmentTransaction = typeof plaidInvestmentTransactions.$inferSelect;
+
+// Stock Data Schema
+export const stocks = pgTable("stocks", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").unique().notNull(),
+  name: text("name").notNull(),
+  exchange: text("exchange").notNull(),
+  sector: text("sector"),
+  industry: text("industry"),
+  marketCap: real("market_cap"),
+  beta: real("beta"),
+  peRatio: real("pe_ratio"),
+  dividendYield: real("dividend_yield"),
+  fiftyTwoWeekHigh: real("fifty_two_week_high"),
+  fiftyTwoWeekLow: real("fifty_two_week_low"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const stockPrices = pgTable("stock_prices", {
+  id: serial("id").primaryKey(),
+  stockId: integer("stock_id").notNull().references(() => stocks.id),
+  date: date("date").notNull(),
+  open: real("open").notNull(),
+  high: real("high").notNull(),
+  low: real("low").notNull(),
+  close: real("close").notNull(),
+  adjustedClose: real("adjusted_close").notNull(),
+  volume: integer("volume").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const stockIndicators = pgTable("stock_indicators", {
+  id: serial("id").primaryKey(),
+  stockId: integer("stock_id").notNull().references(() => stocks.id),
+  date: date("date").notNull(),
+  rsi: real("rsi"), // Relative Strength Index
+  macd: real("macd"), // Moving Average Convergence Divergence
+  sma50: real("sma_50"), // 50-day Simple Moving Average
+  sma200: real("sma_200"), // 200-day Simple Moving Average
+  ema12: real("ema_12"), // 12-day Exponential Moving Average
+  ema26: real("ema_26"), // 26-day Exponential Moving Average
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const stockAlerts = pgTable("stock_alerts", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  stockId: integer("stock_id").notNull().references(() => stocks.id),
+  alertType: text("alert_type").notNull(), // price, rsi, moving_average_cross, etc.
+  threshold: real("threshold").notNull(),
+  direction: text("direction").notNull(), // above, below
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const stockAnalysis = pgTable("stock_analysis", {
+  id: serial("id").primaryKey(),
+  stockId: integer("stock_id").notNull().references(() => stocks.id),
+  analysisType: text("analysis_type").notNull(), // technical, fundamental, sentiment
+  rating: text("rating").notNull(), // buy, sell, hold
+  score: integer("score").notNull(), // 0-100 scale
+  summary: text("summary").notNull(),
+  details: json("details"),
+  technicalFactors: json("technical_factors").$type<string[]>(),
+  fundamentalFactors: json("fundamental_factors").$type<string[]>(),
+  sentimentFactors: json("sentiment_factors").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Stock Relations
+export const stocksRelations = relations(stocks, ({ many }) => ({
+  prices: many(stockPrices),
+  indicators: many(stockIndicators),
+  alerts: many(stockAlerts),
+  analysis: many(stockAnalysis),
+}));
+
+export const stockPricesRelations = relations(stockPrices, ({ one }) => ({
+  stock: one(stocks, {
+    fields: [stockPrices.stockId],
+    references: [stocks.id],
+  }),
+}));
+
+export const stockIndicatorsRelations = relations(stockIndicators, ({ one }) => ({
+  stock: one(stocks, {
+    fields: [stockIndicators.stockId],
+    references: [stocks.id],
+  }),
+}));
+
+export const stockAlertsRelations = relations(stockAlerts, ({ one }) => ({
+  stock: one(stocks, {
+    fields: [stockAlerts.stockId],
+    references: [stocks.id],
+  }),
+  user: one(users, {
+    fields: [stockAlerts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const stockAnalysisRelations = relations(stockAnalysis, ({ one }) => ({
+  stock: one(stocks, {
+    fields: [stockAnalysis.stockId],
+    references: [stocks.id],
+  }),
+}));
+
+// Stock insert schemas
+export const insertStockSchema = createInsertSchema(stocks, {
+  marketCap: z.number().nullable(),
+  beta: z.number().nullable(),
+  peRatio: z.number().nullable(),
+  dividendYield: z.number().nullable(),
+  fiftyTwoWeekHigh: z.number().nullable(),
+  fiftyTwoWeekLow: z.number().nullable(),
+});
+
+export const insertStockPriceSchema = createInsertSchema(stockPrices, {
+  stockId: z.number(),
+  date: z.date(),
+});
+
+export const insertStockIndicatorSchema = createInsertSchema(stockIndicators, {
+  stockId: z.number(),
+  date: z.date(),
+  rsi: z.number().nullable(),
+  macd: z.number().nullable(),
+  sma50: z.number().nullable(),
+  sma200: z.number().nullable(),
+  ema12: z.number().nullable(),
+  ema26: z.number().nullable(),
+});
+
+export const insertStockAlertSchema = createInsertSchema(stockAlerts, {
+  userId: z.string(),
+  stockId: z.number(),
+  alertType: z.string(),
+  threshold: z.number(),
+  direction: z.string(),
+  isActive: z.boolean(),
+});
+
+export const insertStockAnalysisSchema = createInsertSchema(stockAnalysis, {
+  stockId: z.number(),
+  analysisType: z.string(),
+  rating: z.string(),
+  score: z.number(),
+  summary: z.string(),
+});
+
+export type InsertStock = z.infer<typeof insertStockSchema>;
+export type Stock = typeof stocks.$inferSelect;
+
+export type InsertStockPrice = z.infer<typeof insertStockPriceSchema>;
+export type StockPrice = typeof stockPrices.$inferSelect;
+
+export type InsertStockIndicator = z.infer<typeof insertStockIndicatorSchema>;
+export type StockIndicator = typeof stockIndicators.$inferSelect;
+
+export type InsertStockAlert = z.infer<typeof insertStockAlertSchema>;
+export type StockAlert = typeof stockAlerts.$inferSelect;
+
+export type InsertStockAnalysis = z.infer<typeof insertStockAnalysisSchema>;
+export type StockAnalysis = typeof stockAnalysis.$inferSelect;
