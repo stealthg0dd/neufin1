@@ -77,7 +77,8 @@ export async function exchangeToken(req: AuthenticatedRequest, res: Response) {
       itemId: metadata.item_id,
       institutionId,
       institutionName,
-      status: 'active'
+      status: 'active',
+      lastUpdated: new Date()
     });
     
     // Sync accounts and holdings

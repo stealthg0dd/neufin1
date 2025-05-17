@@ -863,6 +863,7 @@ export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
   currentPrice: z.number().nullable(),
   currentValue: z.number().nullable(),
   isoCurrencyCode: z.string().nullable(),
+  lastUpdated: z.date().optional(),
 });
 
 export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions, {
