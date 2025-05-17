@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import SentimentAnalysis from "@/pages/SentimentAnalysis";
 import StockAnalysis from "@/pages/StockAnalysis";
 import InvestmentRecommendations from "@/pages/InvestmentRecommendations";
+import InvestmentAccounts from "@/pages/InvestmentAccounts";
 import MarketData from "@/pages/MarketData";
 import BehavioralBiasAnalyzer from "@/pages/BehavioralBiasAnalyzer";
 import Dashboard from "@/pages/Dashboard";
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/sentiment" component={SentimentAnalysis} />
       <ProtectedRoute path="/stocks" component={StockAnalysis} />
       <ProtectedRoute path="/recommendations" component={InvestmentRecommendations} />
+      <ProtectedRoute path="/accounts" component={InvestmentAccounts} />
       <ProtectedRoute path="/market-data" component={MarketData} />
       <ProtectedRoute path="/bias-analyzer" component={BehavioralBiasAnalyzer} />
       <Route component={NotFound} />
