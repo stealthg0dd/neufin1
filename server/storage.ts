@@ -433,14 +433,18 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updatePlaidItemStatus(id: number, status: string, errorCode?: string, errorMessage?: string): Promise<PlaidItem> {
+    // Create a proper update object based on our schema
+    const updateData: any = {
+      status,
+      errorCode,
+      errorMessage
+    };
+    
+    // The lastUpdated field is automatically updated by the database
+    
     const [updatedItem] = await db
       .update(plaidItems)
-      .set({
-        status,
-        errorCode,
-        errorMessage,
-        lastUpdated: new Date()
-      })
+      .set(updateData)
       .where(eq(plaidItems.id, id))
       .returning();
     return updatedItem;

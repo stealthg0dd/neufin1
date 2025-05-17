@@ -835,7 +835,10 @@ export const insertPlaidItemSchema = createInsertSchema(plaidItems, {
   institutionId: z.string(),
   institutionName: z.string(),
   status: z.string().default("active"),
+  lastUpdated: z.date().optional(),
   consentExpiresAt: z.date().optional(),
+  errorCode: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
 });
 
 export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts, {
@@ -843,6 +846,11 @@ export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts, {
   accountId: z.string(),
   name: z.string(),
   type: z.string(),
+  mask: z.string().nullable().optional(),
+  officialName: z.string().nullable().optional(),
+  subtype: z.string().nullable().optional(),
+  status: z.string().default("active"),
+  lastUpdated: z.date().optional(),
 });
 
 export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
