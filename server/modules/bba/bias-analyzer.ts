@@ -131,11 +131,11 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
     examples: [
       'Averaging down on losing positions just because you have already invested significantly.',
       'Refusing to exit a failed investment strategy because of the time already invested in it.',
-      'Holding onto poor investments because "I've already lost so much, it can only go up from here."'
+      'Holding onto poor investments because "I have already lost so much, it can only go up from here."'
     ],
     corrections: [
       'Evaluate investments based solely on future prospects, not past commitments.',
-      'Ask: "Would I buy this investment today if I didn't already own it?"',
+      'Ask: "Would I buy this investment today if I did not already own it?"',
       'Set predefined exit conditions before investing.'
     ],
     emoji: '🕳️'
