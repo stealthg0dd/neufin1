@@ -32,7 +32,7 @@ const TRACKED_SYMBOLS = [
 ];
 
 // Sector mapping
-const SYMBOL_TO_SECTOR = {
+const SYMBOL_TO_SECTOR: Record<string, string> = {
   'AAPL': 'Technology',
   'MSFT': 'Technology',
   'AMZN': 'Consumer Discretionary',
@@ -197,7 +197,7 @@ export async function getSentimentBySecctor(
 // ============ Sample data for development ============
 
 function getSampleNews(symbol: string): string[] {
-  const sampleNews = {
+  const sampleNews: Record<string, string[]> = {
     'AAPL': [
       `Apple (${symbol}) announces record-breaking quarterly earnings, exceeding analyst expectations with revenue of $97.3 billion. The company's services division saw unprecedented growth of 17%, while iPhone sales remained strong despite supply chain challenges. CEO Tim Cook highlighted the company's focus on innovation and sustainability, announcing new carbon-neutral goals for the supply chain by 2030.`,
       `Investors remain cautious about Apple's (${symbol}) exposure to Chinese markets amid growing geopolitical tensions. While the company reported strong performance in its latest quarter, analysts point to potential disruptions in manufacturing and sales if US-China relations deteriorate further. The stock has shown increased volatility in recent trading sessions.`
@@ -230,7 +230,7 @@ function getSampleNews(symbol: string): string[] {
 }
 
 function getSampleTweets(symbol: string): string[] {
-  const sampleTweets = {
+  const sampleTweets: Record<string, string[]> = {
     'AAPL': [
       `Just got the new iPhone and I'm blown away by the camera quality! $${symbol} continues to impress. #AppleBullish`,
       `$${symbol} services revenue growth slowing down. Competition heating up in key markets. Starting to reduce my position. #investing`,
@@ -265,5 +265,5 @@ function getSampleTweets(symbol: string): string[] {
     `Insider buying at $${symbol} last week. Executives putting their money where their mouth is - always a good sign! #StockMarket`
   ];
 
-  return sampleTweets[symbol] || defaultTweets;
+  return sampleTweets[symbol] || defaultTweets as string[];
 }

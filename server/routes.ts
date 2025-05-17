@@ -1,11 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import sentientRouter from "./modules/sentient/controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for Neufin financial platform
   
-  // Sentiment Analysis API Routes
+  // Mount Sentient API Router
+  app.use("/api/sentient", sentientRouter);
+  
+  // Legacy Sentiment Analysis API Routes 
+  // (These will be migrated to the Sentient module in the future)
   app.get("/api/sentiment/overall", (req, res) => {
     res.json({
       score: 78,
