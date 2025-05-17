@@ -1,11 +1,25 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlaidLinkOnSuccess, PlaidLinkOnExit, PlaidLinkOptions } from 'plaid';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+
+// Define types for Plaid callback functions
+interface PlaidLinkOnSuccess {
+  (publicToken: string, metadata: any): void;
+}
+
+interface PlaidLinkOnExit {
+  (error: any, metadata?: any): void;
+}
+
+interface PlaidLinkOptions {
+  token: string;
+  onSuccess: PlaidLinkOnSuccess;
+  onExit?: PlaidLinkOnExit;
+}
 
 interface PlaidLinkProps {
   onSuccess?: () => void;
@@ -74,14 +88,14 @@ export const PlaidLinkButton: React.FC<PlaidLinkProps> = ({ onSuccess }) => {
   });
 
   const onPlaidSuccess = useCallback<PlaidLinkOnSuccess>(
-    (publicToken, metadata) => {
+    (publicToken: string, metadata: any) => {
       exchangeToken({ publicToken, metadata });
     },
     [exchangeToken]
   );
 
   const onPlaidExit = useCallback<PlaidLinkOnExit>(
-    (error) => {
+    (error: any) => {
       if (error) {
         toast({
           title: 'Connection Cancelled',

@@ -1,20 +1,17 @@
 /**
- * Format a date object to YYYY-MM-DD format
- * @param date The date to format
- * @returns Formatted date string in YYYY-MM-DD format
+ * Utility functions for working with dates in the Plaid API
  */
-export function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+
+/**
+ * Get a date object for today
+ */
+export function getToday(): Date {
+  return new Date();
 }
 
 /**
- * Get a date from N days ago
- * @param days Number of days to subtract from current date
- * @returns Date object representing N days ago
+ * Get a date object for N days ago
+ * @param days Number of days to go back
  */
 export function getDaysAgo(days: number): Date {
   const date = new Date();
@@ -23,9 +20,9 @@ export function getDaysAgo(days: number): Date {
 }
 
 /**
- * Get today's date
- * @returns Date object for today
+ * Format a date as YYYY-MM-DD (required by Plaid API)
+ * @param date Date to format
  */
-export function getToday(): Date {
-  return new Date();
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
 }

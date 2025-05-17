@@ -69,7 +69,7 @@ export async function getInvestmentHoldings(accessToken: string) {
     });
 
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching investment holdings:', error);
     throw new Error(`Failed to fetch holdings: ${error.message}`);
   }
@@ -87,7 +87,7 @@ export async function getAccounts(accessToken: string) {
     });
 
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching accounts:', error);
     throw new Error(`Failed to fetch accounts: ${error.message}`);
   }
@@ -113,7 +113,7 @@ export async function getInvestmentTransactions(
     });
 
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching investment transactions:', error);
     throw new Error(`Failed to fetch transactions: ${error.message}`);
   }
@@ -132,7 +132,7 @@ export async function getInstitutionById(institutionId: string) {
     });
 
     return response.data.institution;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching institution:', error);
     throw new Error(`Failed to fetch institution: ${error.message}`);
   }
