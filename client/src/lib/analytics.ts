@@ -8,19 +8,24 @@ declare global {
 
 // Initialize Google Analytics and Google Ads
 export const initAnalytics = () => {
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  const googleAdsId = 'AW-17089203420';
-
-  if (!measurementId) {
-    console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
-  }
+  const measurementId = 'G-SXSDL3YRVN'; // GA4 measurement ID
+  const googleAdsId = 'AW-17089203420'; // Google Ads ID
 
   // Google Analytics is initialized in index.html through the script tags
   // This function is used for additional configuration or verification
   
   // Make sure gtag is defined
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     console.info('Google Analytics initialized successfully');
+    
+    // Set up any additional configuration if needed
+    // For example, enable enhanced measurement features
+    window.gtag('config', measurementId, {
+      send_page_view: true,
+      cookie_domain: 'auto',
+      cookie_flags: 'SameSite=None;Secure',
+      cookie_prefix: '_ga'
+    });
   } else {
     console.warn('Google Analytics initialization may have failed');
   }

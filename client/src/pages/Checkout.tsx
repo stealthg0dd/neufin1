@@ -65,24 +65,24 @@ function CheckoutForm({ plan }: { plan: string }) {
         
         // Track the successful purchase
         if (typeof window !== 'undefined' && window.gtag) {
-          const planDetails = getPlanDetails(plan);
+          const currentPlan = getPlanDetails(plan);
           const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
           
           // Track for Google Analytics
           window.gtag('event', 'purchase', {
             transaction_id: transactionId,
-            value: planDetails.price,
+            value: currentPlan.price,
             currency: 'USD',
             items: [{
-              item_name: planDetails.name,
-              price: planDetails.price
+              item_name: currentPlan.name,
+              price: currentPlan.price
             }]
           });
           
           // Track for Google Ads conversions
           window.gtag('event', 'conversion', {
             'send_to': 'AW-17089203420/purchase_complete',
-            'value': planDetails.price,
+            'value': currentPlan.price,
             'currency': 'USD',
             'transaction_id': transactionId
           });
