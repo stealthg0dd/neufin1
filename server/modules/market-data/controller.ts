@@ -1,19 +1,18 @@
 /**
- * Neufin Market Data API Controller
- * Handles API endpoints for real-time market data
+ * Market Data API Controller
+ * Handles endpoints for real-time market data
  */
-
-import { Router, Request, Response } from 'express';
-import {
-  fetchRealTimeQuote,
-  fetchMultipleRealTimeQuotes,
-  fetchMarketOverview
+import { Request, Response, Router } from 'express';
+import { 
+  fetchRealTimeQuote, 
+  fetchMultipleQuotes, 
+  getMarketOverview 
 } from './realtime-service';
 
 export const marketDataRouter = Router();
 
 /**
- * Get real-time quote for a specific symbol
+ * Get a real-time quote for a specific symbol
  * GET /api/market-data/quote/:symbol
  */
 marketDataRouter.get('/quote/:symbol', async (req: Request, res: Response) => {
@@ -21,32 +20,15 @@ marketDataRouter.get('/quote/:symbol', async (req: Request, res: Response) => {
     const { symbol } = req.params;
     
     if (!symbol) {
-      return res.status(400).json({
-        success: false,
-        message: 'Symbol parameter is required'
-      });
+      return res.status(400).json({ error: 'Symbol is required' });
     }
     
-    const quote = await fetchRealTimeQuote(symbol.toUpperCase());
+    const quote = await fetchRealTimeQuote(symbol);
     
-    if (!quote) {
-      return res.status(404).json({
-        success: false,
-        message: `No data found for symbol: ${symbol}`
-      });
-    }
-    
-    return res.json({
-      success: true,
-      data: quote
-    });
+    return res.json(quote);
   } catch (error) {
-    console.error('Error fetching real-time quote:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch real-time market data',
-      error: error.message
-    });
+    console.error(`Error fetching quote for ${req.params.symbol}:`, error);
+    return res.status(500).json({ error: 'Failed to fetch quote' });
   }
 });
 
@@ -56,80 +38,44 @@ marketDataRouter.get('/quote/:symbol', async (req: Request, res: Response) => {
  */
 marketDataRouter.get('/quotes', async (req: Request, res: Response) => {
   try {
-    const { symbols } = req.query;
+    const symbolsParam = req.query.symbols as string;
     
-    if (!symbols || typeof symbols !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Symbols parameter is required (comma-separated list)'
-      });
+    if (!symbolsParam) {
+      return res.status(400).json({ error: 'Symbols parameter is required' });
     }
     
-    const symbolList = symbols.split(',').map(s => s.trim().toUpperCase());
+    const symbols = symbolsParam.split(',').map(s => s.trim());
     
-    if (symbolList.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'At least one valid symbol is required'
-      });
+    if (symbols.length === 0) {
+      return res.status(400).json({ error: 'At least one symbol is required' });
     }
     
-    // Limit the number of symbols to prevent abuse/rate limiting
-    const limitedSymbols = symbolList.slice(0, 5);
+    const quotes = await fetchMultipleQuotes(symbols);
     
-    const quotesMap = await fetchMultipleRealTimeQuotes(limitedSymbols);
-    const quotes = Array.from(quotesMap.values());
-    
-    return res.json({
-      success: true,
-      data: quotes,
-      meta: {
-        requested: symbolList.length,
-        returned: quotes.length,
-        timestamp: new Date().toISOString()
-      }
-    });
+    return res.json(quotes);
   } catch (error) {
     console.error('Error fetching multiple quotes:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch real-time market data',
-      error: error.message
-    });
+    return res.status(500).json({ error: 'Failed to fetch quotes' });
   }
 });
 
 /**
- * Get market overview with top gainers, losers, most active stocks
+ * Get market overview data (indices, top gainers/losers, most active)
  * GET /api/market-data/overview
  */
 marketDataRouter.get('/overview', async (req: Request, res: Response) => {
   try {
-    const overview = await fetchMarketOverview();
+    const overview = await getMarketOverview();
     
-    if (!overview) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch market overview data'
-      });
-    }
-    
-    return res.json({
-      success: true,
-      data: overview
-    });
+    return res.json(overview);
   } catch (error) {
     console.error('Error fetching market overview:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch market overview data',
-      error: error.message
-    });
+    return res.status(500).json({ error: 'Failed to fetch market overview' });
   }
 });
 
 /**
- * Trigger immediate refresh of data for a symbol
+ * Refresh data for a specific symbol (force fetch from API)
  * POST /api/market-data/refresh/:symbol
  */
 marketDataRouter.post('/refresh/:symbol', async (req: Request, res: Response) => {
@@ -137,32 +83,15 @@ marketDataRouter.post('/refresh/:symbol', async (req: Request, res: Response) =>
     const { symbol } = req.params;
     
     if (!symbol) {
-      return res.status(400).json({
-        success: false,
-        message: 'Symbol parameter is required'
-      });
+      return res.status(400).json({ error: 'Symbol is required' });
     }
     
-    const quote = await fetchRealTimeQuote(symbol.toUpperCase());
+    // Force refresh by directly calling the API
+    const quote = await fetchRealTimeQuote(symbol);
     
-    if (!quote) {
-      return res.status(404).json({
-        success: false,
-        message: `Failed to refresh data for symbol: ${symbol}`
-      });
-    }
-    
-    return res.json({
-      success: true,
-      message: `Successfully refreshed data for ${symbol}`,
-      data: quote
-    });
+    return res.json(quote);
   } catch (error) {
     console.error(`Error refreshing data for ${req.params.symbol}:`, error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to refresh market data',
-      error: error.message
-    });
+    return res.status(500).json({ error: 'Failed to refresh data' });
   }
 });
