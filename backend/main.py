@@ -257,12 +257,23 @@ async def analyze_bias(portfolio: List[str], trades: Optional[List[dict]] = None
         raise HTTPException(status_code=500, detail=f"Error analyzing biases: {str(e)}")
 
 
-# Health check endpoint
+# Health check endpoints - both standard health and Cloud Run startup checks
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "timestamp": datetime.now().isoformat()}
 
+# Required for Cloud Run startup check
+@app.get("/")
+async def root():
+    return {"message": "Neufin API is running", "status": "ok", "timestamp": datetime.now().isoformat()}
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    
+    # Get port from environment variable or default to 8080 for Cloud Run
+    port = int(os.getenv("PORT", 8080))
+    
+    # Run with host 0.0.0.0 to bind to all interfaces
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

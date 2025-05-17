@@ -20,7 +20,13 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
-EXPOSE 80
+# Cloud Run needs a script to read the PORT env var and start nginx
+RUN echo '#!/bin/sh \n\
+sed -i "s/listen 80/listen $PORT/g" /etc/nginx/conf.d/default.conf \n\
+nginx -g "daemon off;"' > /start.sh && chmod +x /start.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+# Expose port 8080 for Cloud Run
+EXPOSE 8080
+
+# Start NGINX with the dynamic port setting
+CMD ["/start.sh"]
