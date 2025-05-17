@@ -88,7 +88,7 @@ export default function HeroSection() {
             <div className="rounded-xl shadow-2xl bg-white overflow-hidden">
               <div className="w-full h-auto rounded-xl overflow-hidden aspect-w-16 aspect-h-9">
                 <img 
-                  src={dashboardPreview} 
+                  src={financialDashboard} 
                   alt="Neufin AI Financial Dashboard" 
                   className="w-full h-auto object-cover"
                 />
