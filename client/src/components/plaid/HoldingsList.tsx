@@ -14,8 +14,10 @@ interface Holding {
   name: string;
   quantity: number;
   costBasis: number | null;
-  currentPrice: number | null;
-  currentValue: number | null;
+  institutionPrice?: number | null;
+  institutionValue?: number | null;
+  currentPrice?: number | null;
+  currentValue?: number | null;
   isoCurrencyCode: string;
 }
 
@@ -83,15 +85,34 @@ export const HoldingsList: React.FC = () => {
   // Calculate total position for each symbol
   const aggregatedHoldings = Object.entries(holdingsBySymbol).map(([symbol, holdings]) => {
     const totalQuantity = holdings.reduce((sum, h) => sum + h.quantity, 0);
-    const totalValue = holdings.reduce((sum, h) => sum + (h.currentValue || 0), 0);
+    
+    // Handle field name inconsistencies (currentValue vs institutionValue)
+    const totalValue = holdings.reduce((sum, h) => {
+      // First try currentValue, then institutionValue if currentValue is not available
+      const value = h.currentValue !== undefined ? h.currentValue : h.institutionValue;
+      return sum + (value || 0);
+    }, 0);
+    
     const name = holdings[0].name || 'Unknown Security';
+    
+    // Calculate average price considering field name inconsistencies
+    const getPrice = (h: Holding) => {
+      return h.currentPrice !== undefined ? h.currentPrice : h.institutionPrice;
+    };
+    
+    const firstHoldingWithPrice = holdings.find(h => getPrice(h) !== null && getPrice(h) !== undefined);
+    
+    // Calculate average price from total value if available, otherwise use the first holding's price
+    const averagePrice = totalQuantity > 0 
+      ? totalValue / totalQuantity 
+      : (firstHoldingWithPrice ? getPrice(firstHoldingWithPrice) || 0 : 0);
     
     return {
       symbol,
       name,
       totalQuantity,
       totalValue,
-      averagePrice: totalValue / totalQuantity,
+      averagePrice,
       currency: holdings[0].isoCurrencyCode || 'USD',
     };
   });
