@@ -5,6 +5,7 @@ import {
   Facebook, 
   Instagram 
 } from "lucide-react";
+import neufinLogo from "../../assets/neufin-logo.png";
 
 export default function Footer() {
   return (
@@ -13,9 +14,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
             <Link href="/" className="inline-block mb-6">
-              <span className="text-white text-2xl font-bold">
-                neu<span className="text-secondary">fin</span>
-              </span>
+              <img src={neufinLogo} alt="Neufin AI Logo" className="h-10" />
             </Link>
             <p className="text-neutral-400 mb-6">
               AI-powered financial intelligence platform transforming how investors make decisions.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import neufinLogo from "../../assets/neufin-logo.png";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,9 +17,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-primary text-2xl font-bold">
-                neu<span className="text-secondary">fin</span>
-              </span>
+              <img src={neufinLogo} alt="Neufin AI Logo" className="h-10" />
             </Link>
           </div>
 
