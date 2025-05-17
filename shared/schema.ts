@@ -5,16 +5,20 @@ import { relations } from "drizzle-orm";
 
 // User management
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  fullName: text("full_name"),
+  id: text("id").primaryKey(), // We're using Google Auth's sub as the ID
+  email: text("email").unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
+  username: text("username").unique(),
+  password: text("password"),
   role: text("role").default("user"),
   biasScore: integer("bias_score"), // Overall bias score for BBA module
   biasFlags: jsonb("bias_flags"), // JSON array of active bias flags
   hasPremium: boolean("has_premium").default(false), // Flag for premium features
+  subscriptionTier: text("subscription_tier").default("free"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const userRelations = relations(users, ({ many }) => ({
