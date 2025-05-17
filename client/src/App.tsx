@@ -12,6 +12,7 @@ import InvestmentAccounts from "@/pages/InvestmentAccounts";
 import MarketData from "@/pages/MarketData";
 import BehavioralBiasAnalyzer from "@/pages/BehavioralBiasAnalyzer";
 import Dashboard from "@/pages/Dashboard";
+import Checkout from "@/pages/Checkout";
 import Navbar from "@/components/layout/Navbar";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
@@ -19,6 +20,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/checkout" component={Checkout} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/sentiment" component={SentimentAnalysis} />
       <ProtectedRoute path="/stocks" component={StockAnalysis} />

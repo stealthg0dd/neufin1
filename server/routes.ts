@@ -8,6 +8,16 @@ import { marketDataRouter } from "./modules/market-data/controller";
 import { bbaController } from "./modules/bba/controller";
 import plaidRouter from "./modules/plaid";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import Stripe from "stripe";
+
+// Initialize Stripe with the secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn("STRIPE_SECRET_KEY is not set. Stripe payment functionality will not work properly.");
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2025-04-30.basil",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -159,6 +169,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       winRate: 62, // percent
       biasIndicator: "Disposition Effect" // tendency to sell winners too early and hold losers too long
     });
+  });
+
+  // Stripe payment routes
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { plan, amount } = req.body;
+
+      // Validate the amount
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+      }
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // amount in cents
+        currency: "usd",
+        // Store metadata about the plan
+        metadata: {
+          plan
+        },
+        // Automatically confirm the payment when the customer provides their payment information
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      // Send the client secret to the client
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ 
+        error: "Failed to create payment intent",
+        message: error.message
+      });
+    }
+  });
+
+  // Webhook to handle Stripe events (used for subscription management, payment confirmations, etc.)
+  app.post("/api/webhook", async (req, res) => {
+    // The webhook would normally process Stripe events like:
+    // - payment_intent.succeeded
+    // - payment_intent.payment_failed
+    // - customer.subscription.created
+    // - invoice.payment_succeeded
+    // We'd verify the webhook signature for security
+    
+    // For simplicity, just acknowledge the webhook
+    res.json({ received: true });
   });
 
   const httpServer = createServer(app);
