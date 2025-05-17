@@ -12,7 +12,7 @@ import { Loader2, TrendingUp, TrendingDown, MinusCircle, Info } from 'lucide-rea
 import { cn } from '@/lib/utils';
 
 // Mock data for development
-import { sentimentData } from '@/data/mockData';
+import { sentimentData } from '@/data/sentimentData';
 
 // Colors for sentiment visualization
 const COLORS = {
