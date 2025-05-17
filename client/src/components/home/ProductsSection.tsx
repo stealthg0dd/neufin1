@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Brain, BarChart2, Lightbulb, PieChart } from "lucide-react";
 import SentimentChart from "@/components/charts/SentimentChart";
 
 export default function ProductsSection() {
