@@ -279,17 +279,64 @@ async function generateInvestmentRecommendation(
     preferredSectors?: string[]
   }
 ) {
-  // Create a comprehensive prompt for the AI
-  const prompt = `
+  try {
+    // Get real-time price data if available
+    let currentPrice = null;
+    try {
+      currentPrice = await fetchRealTimeQuote(symbol);
+      console.log(`Fetched real-time quote for ${symbol}:`, currentPrice);
+    } catch (error) {
+      console.warn(`Could not fetch real-time data for ${symbol}:`, error);
+    }
+    
+    // If Claude is available, use it for enhanced analysis
+    if (USE_CLAUDE_FOR_ANALYSIS) {
+      try {
+        console.log(`Using Claude for enhanced analysis of ${symbol}`);
+        
+        // Map the investment horizon to time horizon
+        let timeHorizon: 'short_term' | 'mid_term' | 'long_term' = 'mid_term';
+        if (preferences?.investmentHorizon === 'short') timeHorizon = 'short_term';
+        if (preferences?.investmentHorizon === 'medium') timeHorizon = 'mid_term';
+        if (preferences?.investmentHorizon === 'long') timeHorizon = 'long_term';
+        
+        // Prepare request for Claude analysis
+        const request = {
+          symbol,
+          timeHorizon,
+          riskTolerance: preferences?.riskTolerance || 'medium',
+          currentPrice,
+          historicalData: stockData
+        };
+        
+        // Call the Claude-powered analysis
+        const analysis = await generateInvestmentAnalysis(request);
+        return analysis;
+      } catch (error) {
+        console.error("Error using Claude for analysis, falling back to OpenAI:", error);
+        // Fall through to OpenAI if Claude fails
+      }
+    }
+    
+    // Create a comprehensive prompt for the AI
+    const prompt = `
 You are a world-class financial analyst for Neufin financial intelligence platform. 
 Generate a detailed investment recommendation for ${symbol} (${stockData.name || 'N/A'}).
 
 Here's the data about the stock:
 Company name: ${stockData.name || 'N/A'}
 Sector: ${stockData.sector || 'N/A'}
-Current price: $${stockData.latestPrice || 'N/A'}
+${currentPrice ? 
+  `Current price: $${currentPrice.price}
+Change: ${currentPrice.change > 0 ? '+' : ''}${currentPrice.change} (${currentPrice.changePercent > 0 ? '+' : ''}${(currentPrice.changePercent * 100).toFixed(2)}%)
+Volume: ${currentPrice.volume}
+High: $${currentPrice.high}
+Low: $${currentPrice.low}`
+  : 
+  `Current price: $${stockData.latestPrice || 'N/A'}
 52-week high: $${stockData.high52Week || 'N/A'}
-52-week low: $${stockData.low52Week || 'N/A'}
+52-week low: $${stockData.low52Week || 'N/A'}`
+}
 Market cap: $${stockData.marketCap || 'N/A'}
 P/E ratio: ${stockData.peRatio || 'N/A'}
 Dividend yield: ${stockData.dividendYield || 'N/A'}%
@@ -338,7 +385,6 @@ Format your response as JSON with the following structure:
 }
 `;
 
-  try {
     // Call OpenAI to get the recommendation
     const response = await openai.chat.completions.create({
       model: DEFAULT_MODEL,
