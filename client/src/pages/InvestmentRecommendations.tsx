@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Lightbulb, TrendingUp, ChevronsUp, ChevronUp, AlertCircle, Clock, Zap, BarChart2, DollarSign, ArrowUp, ArrowDown, Minus, ArrowUpRight, BarChart3, Lock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import MarketDataWidget, { QuoteCard } from '@/components/market-data/MarketDataWidget';
 
 // Types for investment recommendations
 interface InvestmentRecommendation {
@@ -350,16 +351,26 @@ export default function InvestmentRecommendations() {
         />
       )}
       
-      {/* Statistics and Metrics Section */}
+      {/* Market Data and Insights Section */}
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6 flex items-center">
           <BarChart2 className="mr-2 h-6 w-6 text-blue-600" />
-          Recommendation Insights
+          Market Data & Recommendation Insights
         </h2>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Real-time Market Data */}
+          <div>
+            <MarketDataWidget className="mb-6" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 mt-6">
+              <QuoteCard symbol="AAPL" />
+              <QuoteCard symbol="NVDA" />
+            </div>
+          </div>
+          
           {/* Distribution by Recommendation Type */}
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Recommendation Distribution</CardTitle>
               <CardDescription>Breakdown of AI recommendations by type</CardDescription>
@@ -395,7 +406,7 @@ export default function InvestmentRecommendations() {
           </Card>
           
           {/* Expected Returns by Sector */}
-          <Card>
+          <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Expected Returns by Sector</CardTitle>
               <CardDescription>Average expected returns for each sector</CardDescription>

@@ -9,11 +9,16 @@ import { storage } from "../../storage";
 import { aiRecommendations, insertAiRecommendationSchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
+import { generateInvestmentAnalysis } from "./ai-analyzer";
+import { fetchRealTimeQuote } from "../market-data/realtime-service";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const DEFAULT_MODEL = "gpt-4o";
+
+// Flag to use Claude for enhanced analysis (if available)
+const USE_CLAUDE_FOR_ANALYSIS = process.env.ANTHROPIC_API_KEY ? true : false;
 
 export const o2Router = Router();
 
