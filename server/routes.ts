@@ -6,7 +6,7 @@ import nemoRouter from "./modules/nemo/controller";
 import { o2Router } from "./modules/o2/controller";
 import { marketDataRouter } from "./modules/market-data/controller";
 import { bbaController } from "./modules/bba/controller";
-import plaidRouter from "./modules/plaid/controller";
+import plaidRouter from "./modules/plaid";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {

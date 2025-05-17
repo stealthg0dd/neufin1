@@ -1,40 +1,49 @@
 import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } from 'plaid';
+import { formatDate, getDaysAgo, getToday } from '../../utils/date-utils';
 
-// Create a Plaid client with the appropriate credentials
-// For sandbox environment, we'll use test credentials
+// Configure Plaid client
 const configuration = new Configuration({
-  basePath: PlaidEnvironments.sandbox,
+  basePath: PlaidEnvironments.sandbox, // Use sandbox for development
   baseOptions: {
     headers: {
-      'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID || '',
-      'PLAID-SECRET': process.env.PLAID_SECRET || '',
+      'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
+      'PLAID-SECRET': process.env.PLAID_SECRET,
     },
   },
 });
 
+// Initialize Plaid API client
 export const plaidClient = new PlaidApi(configuration);
 
-// Function to create a link token for a user
+/**
+ * Create a link token for a user to initialize Plaid Link
+ * @param userId User ID to associate with the link
+ * @returns Link token to initialize Plaid Link
+ */
 export async function createLinkToken(userId: string): Promise<string> {
   try {
     const response = await plaidClient.linkTokenCreate({
       user: {
         client_user_id: userId,
       },
-      client_name: 'Neufin',
-      products: [Products.Investments, Products.Auth],
+      client_name: 'Neufin Finance',
+      products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
     });
 
     return response.data.link_token;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating link token:', error);
-    throw new Error('Failed to create link token');
+    throw new Error(`Failed to create link token: ${error.message}`);
   }
 }
 
-// Function to exchange a public token for an access token
+/**
+ * Exchange a public token for an access token
+ * @param publicToken Public token from Plaid Link
+ * @returns Access token to use with Plaid API
+ */
 export async function exchangePublicToken(publicToken: string): Promise<string> {
   try {
     const response = await plaidClient.itemPublicTokenExchange({
@@ -42,13 +51,17 @@ export async function exchangePublicToken(publicToken: string): Promise<string> 
     });
 
     return response.data.access_token;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exchanging public token:', error);
-    throw new Error('Failed to exchange public token');
+    throw new Error(`Failed to exchange token: ${error.message}`);
   }
 }
 
-// Function to retrieve investment holdings for an account
+/**
+ * Get investment holdings for an account
+ * @param accessToken Access token for the Plaid item
+ * @returns Investment holdings data
+ */
 export async function getInvestmentHoldings(accessToken: string) {
   try {
     const response = await plaidClient.investmentsHoldingsGet({
@@ -58,11 +71,15 @@ export async function getInvestmentHoldings(accessToken: string) {
     return response.data;
   } catch (error) {
     console.error('Error fetching investment holdings:', error);
-    throw new Error('Failed to fetch investment holdings');
+    throw new Error(`Failed to fetch holdings: ${error.message}`);
   }
 }
 
-// Function to retrieve accounts for an item
+/**
+ * Get accounts for a Plaid item
+ * @param accessToken Access token for the Plaid item
+ * @returns Accounts data
+ */
 export async function getAccounts(accessToken: string) {
   try {
     const response = await plaidClient.accountsGet({
@@ -72,31 +89,41 @@ export async function getAccounts(accessToken: string) {
     return response.data;
   } catch (error) {
     console.error('Error fetching accounts:', error);
-    throw new Error('Failed to fetch accounts');
+    throw new Error(`Failed to fetch accounts: ${error.message}`);
   }
 }
 
-// Function to retrieve investment transactions for an account
+/**
+ * Get investment transactions for an account
+ * @param accessToken Access token for the Plaid item
+ * @param startDate Start date for transactions
+ * @param endDate End date for transactions
+ * @returns Investment transactions data
+ */
 export async function getInvestmentTransactions(
   accessToken: string,
-  startDate: string,
-  endDate: string
+  startDate: Date = getDaysAgo(30),
+  endDate: Date = getToday()
 ) {
   try {
     const response = await plaidClient.investmentsTransactionsGet({
       access_token: accessToken,
-      start_date: startDate,
-      end_date: endDate,
+      start_date: formatDate(startDate),
+      end_date: formatDate(endDate),
     });
 
     return response.data;
   } catch (error) {
     console.error('Error fetching investment transactions:', error);
-    throw new Error('Failed to fetch investment transactions');
+    throw new Error(`Failed to fetch transactions: ${error.message}`);
   }
 }
 
-// Function to retrieve institution details
+/**
+ * Get institution details by ID
+ * @param institutionId Institution ID from Plaid
+ * @returns Institution details
+ */
 export async function getInstitutionById(institutionId: string) {
   try {
     const response = await plaidClient.institutionsGetById({
@@ -106,7 +133,7 @@ export async function getInstitutionById(institutionId: string) {
 
     return response.data.institution;
   } catch (error) {
-    console.error('Error fetching institution details:', error);
-    throw new Error('Failed to fetch institution details');
+    console.error('Error fetching institution:', error);
+    throw new Error(`Failed to fetch institution: ${error.message}`);
   }
 }

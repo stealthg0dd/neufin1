@@ -353,6 +353,185 @@ export type BehavioralBias = typeof behavioralBiases.$inferSelect;
 export type InsertBiasAnalysisReport = z.infer<typeof insertBiasAnalysisReportSchema>;
 export type BiasAnalysisReport = typeof biasAnalysisReports.$inferSelect;
 
+// Session storage table for persistent auth sessions
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  }
+);
+
+// Plaid Integration Schema
+export const plaidItems = pgTable("plaid_items", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  accessToken: text("access_token").notNull(),
+  itemId: text("item_id").notNull().unique(),
+  institutionId: text("institution_id"),
+  institutionName: text("institution_name"),
+  status: text("status").default("active"), // active, error, disconnected
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const plaidItemsRelations = relations(plaidItems, ({ one, many }) => ({
+  user: one(users, {
+    fields: [plaidItems.userId],
+    references: [users.id],
+  }),
+  accounts: many(plaidAccounts),
+}));
+
+export const plaidAccounts = pgTable("plaid_accounts", {
+  id: serial("id").primaryKey(),
+  plaidItemId: integer("plaid_item_id").notNull().references(() => plaidItems.id),
+  accountId: text("account_id").notNull().unique(),
+  name: text("name").notNull(),
+  mask: text("mask"),
+  officialName: text("official_name"),
+  type: text("type").notNull(), // investment, credit, depository, etc.
+  subtype: text("subtype"),
+  status: text("status").default("active"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const plaidAccountsRelations = relations(plaidAccounts, ({ one, many }) => ({
+  plaidItem: one(plaidItems, {
+    fields: [plaidAccounts.plaidItemId],
+    references: [plaidItems.id],
+  }),
+  holdings: many(plaidHoldings),
+  transactions: many(plaidInvestmentTransactions),
+}));
+
+export const plaidHoldings = pgTable("plaid_holdings", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
+  securityId: text("security_id").notNull(),
+  symbol: text("symbol"),
+  name: text("name"),
+  quantity: real("quantity").notNull(),
+  costBasis: doublePrecision("cost_basis"),
+  institutionPrice: doublePrecision("institution_price"),
+  institutionValue: doublePrecision("institution_value"),
+  isoCurrencyCode: text("iso_currency_code"),
+  unofficialCurrencyCode: text("unofficial_currency_code"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const plaidHoldingsRelations = relations(plaidHoldings, ({ one }) => ({
+  account: one(plaidAccounts, {
+    fields: [plaidHoldings.accountId],
+    references: [plaidAccounts.id],
+  }),
+}));
+
+export const plaidInvestmentTransactions = pgTable("plaid_investment_transactions", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
+  plaidTransactionId: text("plaid_transaction_id").notNull().unique(),
+  securityId: text("security_id"),
+  name: text("name"),
+  symbol: text("symbol"),
+  amount: doublePrecision("amount").notNull(),
+  quantity: real("quantity"),
+  price: doublePrecision("price"),
+  fees: doublePrecision("fees"),
+  type: text("type"), // buy, sell, dividend, etc.
+  subtype: text("subtype"),
+  date: timestamp("date").notNull(),
+  isoCurrencyCode: text("iso_currency_code"),
+  unofficialCurrencyCode: text("unofficial_currency_code"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const plaidInvestmentTransactionsRelations = relations(plaidInvestmentTransactions, ({ one }) => ({
+  account: one(plaidAccounts, {
+    fields: [plaidInvestmentTransactions.accountId],
+    references: [plaidAccounts.id],
+  }),
+}));
+
+// Plaid Schema Insert Types
+export const insertPlaidItemSchema = createInsertSchema(plaidItems).pick({
+  userId: true,
+  accessToken: true,
+  itemId: true,
+  institutionId: true,
+  institutionName: true,
+  status: true,
+  errorCode: true,
+  errorMessage: true,
+});
+
+export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts).pick({
+  plaidItemId: true,
+  accountId: true,
+  name: true,
+  mask: true,
+  officialName: true,
+  type: true,
+  subtype: true,
+  status: true,
+});
+
+export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings).pick({
+  accountId: true,
+  securityId: true,
+  symbol: true,
+  name: true,
+  quantity: true,
+  costBasis: true,
+  institutionPrice: true,
+  institutionValue: true,
+  isoCurrencyCode: true,
+  unofficialCurrencyCode: true,
+});
+
+export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions).pick({
+  accountId: true,
+  plaidTransactionId: true,
+  securityId: true,
+  name: true,
+  symbol: true,
+  amount: true,
+  quantity: true,
+  price: true,
+  fees: true,
+  type: true,
+  subtype: true,
+  date: true,
+  isoCurrencyCode: true,
+  unofficialCurrencyCode: true,
+});
+
+// Plaid Type Exports
+export type InsertPlaidItem = z.infer<typeof insertPlaidItemSchema>;
+export type PlaidItem = typeof plaidItems.$inferSelect;
+
+export type InsertPlaidAccount = z.infer<typeof insertPlaidAccountSchema>;
+export type PlaidAccount = typeof plaidAccounts.$inferSelect;
+
+export type InsertPlaidHolding = z.infer<typeof insertPlaidHoldingSchema>;
+export type PlaidHolding = typeof plaidHoldings.$inferSelect;
+
+export type InsertPlaidInvestmentTransaction = z.infer<typeof insertPlaidInvestmentTransactionSchema>;
+export type PlaidInvestmentTransaction = typeof plaidInvestmentTransactions.$inferSelect;
+
+// Update user relations to include Plaid items
+export const userRelationsWithPlaid = relations(users, ({ many }) => ({
+  portfolios: many(portfolios),
+  sentimentAlerts: many(sentimentAlerts),
+  investmentPreferences: many(investmentPreferences),
+  behavioralBiases: many(behavioralBiases),
+  plaidItems: many(plaidItems),
+}));
+
 // Neufin Nemo (Stock Intelligence) Schema
 
 export const stocks = pgTable("stocks", {
