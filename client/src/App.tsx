@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import SentimentAnalysis from "@/pages/SentimentAnalysis";
 import StockAnalysis from "@/pages/StockAnalysis";
+import Navbar from "@/components/layout/Navbar";
 
 function Router() {
   return (
@@ -24,7 +25,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1">
+            <Router />
+          </main>
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );

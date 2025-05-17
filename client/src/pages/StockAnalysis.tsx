@@ -499,7 +499,11 @@ const StockAnalysis = () => {
                               date: stockInfo.prices.slice(-14)[i]?.date,
                               value: parseFloat(stockInfo.indicators.macdHistogram?.toString() || '0')
                             }))}
-                            fill={(entry) => entry.value >= 0 ? '#10b981' : '#f43f5e'} />
+                            fill="#0ea5e9">
+                            {Array(14).fill({}).map((_, i) => (
+                              <Cell key={`cell-${i}`} fill={parseFloat(stockInfo.indicators.macdHistogram?.toString() || '0') >= 0 ? '#10b981' : '#f43f5e'} />
+                            ))}
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -665,8 +669,8 @@ const StockAnalysis = () => {
                         <p className="text-sm font-medium">{formatIndicator(stockInfo.indicators.volatility)}</p>
                       </div>
                       <div className="p-2 border rounded-md">
-                        <p className="text-xs text-muted-foreground">Price vs SMA (200)</p>
-                        <p className="text-sm font-medium">{formatIndicator(stockInfo.indicators.sma200)}</p>
+                        <p className="text-xs text-muted-foreground">Price vs EMA (200)</p>
+                        <p className="text-sm font-medium">{formatIndicator(stockInfo.indicators.ema200)}</p>
                       </div>
                     </div>
                   </div>
@@ -700,9 +704,9 @@ const StockAnalysis = () => {
                     <YAxis />
                     <Tooltip formatter={(value: any) => [`${value.toFixed(2)}%`, 'Percent Change']} />
                     <Legend />
-                    <Bar dataKey="value" name="Percent Change">
-                      {Object.entries(stockData.comparison.metrics.perChange).map(([key, value], index) => (
-                        <Cell key={`cell-${index}`} fill={value >= 0 ? '#10b981' : '#f43f5e'} />
+                    <Bar dataKey="value" name="Percent Change" fill="#0ea5e9">
+                      {Object.entries(stockData.comparison.metrics.perChange).map(([key, val], index) => (
+                        <Cell key={`cell-${index}`} fill={Number(val) >= 0 ? '#10b981' : '#f43f5e'} />
                       ))}
                     </Bar>
                   </BarChart>

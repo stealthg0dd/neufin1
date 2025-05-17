@@ -1,101 +1,78 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import neufinLogo from "../../assets/neufin-logo.png";
+import { BarChart2, TrendingUp, Brain, AreaChart } from "lucide-react";
+import logoPath from "@assets/neufin tagline bare logo.png";
 
-export default function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
+const Navbar = () => {
+  const [location] = useLocation();
+  
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-neutral-100 shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <img src={neufinLogo} alt="Neufin AI Logo" className="h-10" />
+    <header className="border-b sticky top-0 bg-white z-10">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <Link href="/">
+            <a className="flex items-center">
+              <img 
+                src={logoPath} 
+                alt="Neufin Logo" 
+                className="h-10 mr-2"
+              />
+            </a>
+          </Link>
+          
+          <nav className="hidden md:flex items-center space-x-1">
+            <Link href="/">
+              <a>
+                <Button 
+                  variant={location === "/" ? "default" : "ghost"} 
+                  className="text-sm h-9"
+                >
+                  <TrendingUp className="mr-1.5 h-4 w-4" />
+                  Home
+                </Button>
+              </a>
             </Link>
-          </div>
-
-          <nav className="hidden md:flex space-x-8 items-center">
-            <a href="#products" className="text-neutral-600 hover:text-primary font-medium transition-colors">
-              Products
-            </a>
-            <a href="#how-it-works" className="text-neutral-600 hover:text-primary font-medium transition-colors">
-              How It Works
-            </a>
-            <a href="#pricing" className="text-neutral-600 hover:text-primary font-medium transition-colors">
-              Pricing
-            </a>
-            <a href="#faq" className="text-neutral-600 hover:text-primary font-medium transition-colors">
-              FAQ
-            </a>
+            <Link href="/sentiment">
+              <a>
+                <Button 
+                  variant={location === "/sentiment" ? "default" : "ghost"} 
+                  className="text-sm h-9"
+                >
+                  <Brain className="mr-1.5 h-4 w-4" />
+                  Sentiment
+                </Button>
+              </a>
+            </Link>
+            <Link href="/stocks">
+              <a>
+                <Button 
+                  variant={location === "/stocks" ? "default" : "ghost"} 
+                  className="text-sm h-9"
+                >
+                  <BarChart2 className="mr-1.5 h-4 w-4" />
+                  Stocks
+                </Button>
+              </a>
+            </Link>
           </nav>
-
-          <div className="flex items-center space-x-4">
-            <Link
-              href="#"
-              className="hidden md:inline-block text-neutral-600 hover:text-primary font-medium transition-colors"
-            >
-              Log in
-            </Link>
-            <Button className="bg-primary hover:bg-primary-dark transition-colors">
-              Get Started
-            </Button>
-            <button
-              className="md:hidden text-neutral-500 hover:text-neutral-700 focus:outline-none"
-              onClick={toggleMobileMenu}
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
         </div>
-      </div>
-
-      {/* Mobile menu */}
-      <div className={`md:hidden ${isMobileMenuOpen ? "block" : "hidden"}`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <a
-            href="#products"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:bg-neutral-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Products
-          </a>
-          <a
-            href="#how-it-works"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:bg-neutral-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            How It Works
-          </a>
-          <a
-            href="#pricing"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:bg-neutral-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Pricing
-          </a>
-          <a
-            href="#faq"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:bg-neutral-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            FAQ
-          </a>
-          <a
-            href="#"
-            className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:bg-neutral-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Log in
-          </a>
+        
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" className="hidden sm:flex">
+            Sign In
+          </Button>
+          <Button size="sm" className="hidden sm:flex">
+            Get Started
+          </Button>
+          
+          {/* Mobile menu button (could be expanded with a proper mobile menu) */}
+          <Button variant="ghost" size="sm" className="md:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </Button>
         </div>
       </div>
     </header>
   );
-}
+};
+
+export default Navbar;
