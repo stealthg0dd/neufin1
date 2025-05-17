@@ -829,7 +829,7 @@ function generateImprovementSuggestions(biases: BiasDetectionResult['detectedBia
   // Sort biases by impact and score
   const sortedBiases = [...biases].sort((a, b) => {
     const impactOrder = { 'high': 3, 'medium': 2, 'low': 1 };
-    const impactDiff = impactOrder[b.impact] - impactOrdera.impact;
+    const impactDiff = impactOrder[b.impact] - impactOrder[a.impact];
 
     if (impactDiff !== 0) return impactDiff;
     return b.score - a.score;
