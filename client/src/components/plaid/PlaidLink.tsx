@@ -48,8 +48,13 @@ export const PlaidLinkButton: React.FC<PlaidLinkProps> = ({ onSuccess }) => {
   const queryClient = useQueryClient();
   const usePlaidLinkHook = usePlaidLink();
 
+  // Define interface for link token response
+  interface LinkTokenResponse {
+    link_token: string;
+  }
+
   // Fetch link token from our backend
-  const { data: linkTokenData, isLoading: isLoadingToken, error: tokenError } = useQuery({
+  const { data: linkTokenData, isLoading: isLoadingToken, error: tokenError } = useQuery<LinkTokenResponse>({
     queryKey: ['/api/plaid/link-token'],
     enabled: !!isAuthenticated,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -108,11 +113,11 @@ export const PlaidLinkButton: React.FC<PlaidLinkProps> = ({ onSuccess }) => {
   );
 
   // Configure Plaid Link
-  const plaidConfig: PlaidLinkOptions = {
-    token: linkTokenData?.link_token,
+  const plaidConfig = {
+    token: linkTokenData?.link_token || '',
     onSuccess: onPlaidSuccess,
     onExit: onPlaidExit,
-  };
+  } as PlaidLinkOptions;
 
   const { open, ready } = usePlaidLinkHook?.(plaidConfig) || { open: undefined, ready: false };
 

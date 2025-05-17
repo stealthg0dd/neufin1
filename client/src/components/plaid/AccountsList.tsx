@@ -27,7 +27,7 @@ export const AccountsList: React.FC = () => {
     isLoading,
     error,
     refetch
-  } = useQuery({
+  } = useQuery<Account[]>({
     queryKey: ['/api/plaid/accounts'],
     staleTime: 1000 * 60, // 1 minute
   });
@@ -102,7 +102,7 @@ export const AccountsList: React.FC = () => {
       <CardContent>
         {accounts && accounts.length > 0 ? (
           <div className="space-y-4">
-            {accounts.map((account: Account) => (
+            {accounts.map((account) => (
               <div key={account.id} className="p-4 border rounded-lg">
                 <div className="flex justify-between items-center">
                   <div>
