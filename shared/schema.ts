@@ -219,8 +219,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   email: true,
-  fullName: true,
   role: true,
+});
+
+// Google OAuth user schema
+export const upsertUserSchema = createInsertSchema(users).pick({
+  id: true,
+  email: true, 
+  firstName: true,
+  lastName: true,
+  profileImageUrl: true,
 });
 
 export const insertPortfolioSchema = createInsertSchema(portfolios).pick({
@@ -315,6 +323,7 @@ export const insertBiasAnalysisReportSchema = createInsertSchema(biasAnalysisRep
 
 // Type definitions
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 export type InsertPortfolio = z.infer<typeof insertPortfolioSchema>;

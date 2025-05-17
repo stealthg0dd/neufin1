@@ -10,7 +10,8 @@ import {
   userTrades,
   biasAnalysisReports,
   type User, 
-  type InsertUser, 
+  type InsertUser,
+  type UpsertUser,
   type Portfolio, 
   type InsertPortfolio,
   type PortfolioHolding,
@@ -36,9 +37,10 @@ import { eq, and, desc } from "drizzle-orm";
 // Enhanced storage interface for Neufin platform
 export interface IStorage {
   // User management
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Portfolio management
   getPortfoliosByUserId(userId: number): Promise<Portfolio[]>;
@@ -91,7 +93,7 @@ export interface IStorage {
 // Database implementation of the storage interface
 export class DatabaseStorage implements IStorage {
   // User management
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -103,6 +105,21 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
   
@@ -322,7 +339,7 @@ export class DatabaseStorage implements IStorage {
         biasScore: score,
         biasFlags: flags.length ? JSON.stringify(flags) : undefined
       })
-      .where(eq(users.id, userId))
+      .where(eq(users.id, userId.toString()))
       .returning();
     return updatedUser;
   }
@@ -331,7 +348,7 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId.toString()));
     return user;
   }
 }
