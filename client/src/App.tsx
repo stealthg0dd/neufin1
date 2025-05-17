@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import SentimentAnalysis from "@/pages/SentimentAnalysis";
 import StockAnalysis from "@/pages/StockAnalysis";
+import InvestmentRecommendations from "@/pages/InvestmentRecommendations";
 import Navbar from "@/components/layout/Navbar";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/sentiment" component={SentimentAnalysis} />
       <Route path="/stocks" component={StockAnalysis} />
+      <Route path="/recommendations" component={InvestmentRecommendations} />
       <Route component={NotFound} />
     </Switch>
   );
