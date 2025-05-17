@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import SentimentAnalysis from "@/pages/SentimentAnalysis";
 import StockAnalysis from "@/pages/StockAnalysis";
 import InvestmentRecommendations from "@/pages/InvestmentRecommendations";
+import MarketData from "@/pages/MarketData";
 import Navbar from "@/components/layout/Navbar";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/sentiment" component={SentimentAnalysis} />
       <Route path="/stocks" component={StockAnalysis} />
       <Route path="/recommendations" component={InvestmentRecommendations} />
+      <Route path="/market-data" component={MarketData} />
       <Route component={NotFound} />
     </Switch>
   );
