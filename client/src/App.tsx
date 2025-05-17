@@ -15,8 +15,14 @@ import Dashboard from "@/pages/Dashboard";
 import Checkout from "@/pages/Checkout";
 import Navbar from "@/components/layout/Navbar";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { useEffect } from "react";
+import { initAnalytics } from "./lib/analytics";
+import { useAnalytics } from "./hooks/use-analytics";
 
 function Router() {
+  // Track page views when routes change
+  useAnalytics();
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -34,6 +40,12 @@ function Router() {
 }
 
 function App() {
+  // Initialize Google Analytics when app loads
+  useEffect(() => {
+    // Initialize analytics
+    initAnalytics();
+  }, []);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

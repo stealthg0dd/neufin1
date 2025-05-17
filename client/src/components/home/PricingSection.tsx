@@ -32,6 +32,26 @@ export default function PricingSection() {
     setIsLoading({...isLoading, [plan]: true});
 
     try {
+      // Track the checkout initiation - for Google Analytics and Google Ads tracking
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'begin_checkout', {
+          event_category: 'ecommerce',
+          event_label: plan,
+          value: price / 100, // Convert from cents to dollars for tracking
+          items: [{
+            plan: plan,
+            price: price / 100
+          }]
+        });
+        
+        // Track for Google Ads conversions - checkout start event
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-17089203420/checkout_started',
+          'value': price / 100,
+          'currency': 'USD'
+        });
+      }
+      
       const response = await apiRequest('POST', '/api/create-payment-intent', {
         plan,
         amount: price
