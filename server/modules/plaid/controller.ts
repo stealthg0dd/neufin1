@@ -7,7 +7,7 @@ import {
   getInstitutionById
 } from './plaid-client';
 import { storage } from '../../storage';
-import { formatDate } from '../../utils/date-utils';
+import { formatDateForPlaid, formatDateForDisplay } from '../../utils/date-utils';
 
 const router = Router();
 
@@ -22,7 +22,7 @@ export async function getLinkToken(req: Request, res: Response) {
     
     const linkToken = await createLinkToken(userId);
     res.json({ link_token: linkToken });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting link token:', error);
     res.status(500).json({ error: error.message });
   }
@@ -73,7 +73,7 @@ export async function exchangeToken(req: Request, res: Response) {
     await syncAccountsAndHoldings(plaidItem.id, accessToken);
     
     res.json({ success: true, institutionName });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exchanging token:', error);
     res.status(500).json({ error: error.message });
   }
@@ -106,7 +106,7 @@ export async function getConnectedAccounts(req: Request, res: Response) {
     }
     
     res.json(accounts);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching connected accounts:', error);
     res.status(500).json({ error: error.message });
   }
@@ -149,7 +149,7 @@ export async function getInvestmentHoldingsForUser(req: Request, res: Response) 
     }
     
     res.json(allHoldings);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching investment holdings:', error);
     res.status(500).json({ error: error.message });
   }

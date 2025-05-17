@@ -1,5 +1,5 @@
 import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } from 'plaid';
-import { formatDate, getDaysAgo, getToday } from '../../utils/date-utils';
+import { formatDateForPlaid, getDateDaysAgo, getCurrentDateFormatted } from '../../utils/date-utils';
 
 // Configure Plaid client
 const configuration = new Configuration({
@@ -102,14 +102,14 @@ export async function getAccounts(accessToken: string) {
  */
 export async function getInvestmentTransactions(
   accessToken: string,
-  startDate: Date = getDaysAgo(30),
-  endDate: Date = getToday()
+  startDate: Date = getDateDaysAgo(30),
+  endDate: Date = new Date()
 ) {
   try {
     const response = await plaidClient.investmentsTransactionsGet({
       access_token: accessToken,
-      start_date: formatDate(startDate),
-      end_date: formatDate(endDate),
+      start_date: formatDateForPlaid(startDate),
+      end_date: formatDateForPlaid(endDate),
     });
 
     return response.data;
