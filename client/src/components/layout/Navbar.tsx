@@ -14,12 +14,13 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link href="/">
-            <div className="flex items-center cursor-pointer">
+            <div className="flex flex-col items-center cursor-pointer">
               <img 
                 src={logoPath} 
                 alt="Neufin Logo" 
-                className="h-10 mr-2"
+                className="h-14 mr-2"
               />
+              <span className="text-xs text-blue-600 font-semibold whitespace-nowrap">NEURAL POWERED FINANCE UNLOCKED</span>
             </div>
           </Link>
           
@@ -99,7 +100,14 @@ const Navbar = () => {
             <Button 
               size="sm" 
               className="hidden sm:flex"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => {
+                // Use direct form submission for "Start Free Trial" button
+                const form = document.createElement('form');
+                form.method = 'get';
+                form.action = '/api/login';
+                document.body.appendChild(form);
+                form.submit();
+              }}
             >
               Start Free Trial
             </Button>
