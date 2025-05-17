@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { CheckCircle2, Info } from "lucide-react";
 import {
   Card,
@@ -20,7 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export default function PricingSection() {
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({
     basic: false,

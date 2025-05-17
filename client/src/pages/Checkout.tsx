@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { 
   Elements, 
   PaymentElement, 
@@ -28,7 +28,7 @@ function CheckoutForm({ plan }: { plan: string }) {
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +123,7 @@ function CheckoutForm({ plan }: { plan: string }) {
 }
 
 export default function Checkout() {
-  const [location] = useLocation();
-  const navigate = useNavigate();
+  const [location, navigate] = useLocation();
   const [clientSecret, setClientSecret] = useState<string>("");
   const [plan, setPlan] = useState<string>("");
 
