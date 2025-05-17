@@ -10,12 +10,14 @@ import StockAnalysis from "@/pages/StockAnalysis";
 import InvestmentRecommendations from "@/pages/InvestmentRecommendations";
 import MarketData from "@/pages/MarketData";
 import BehavioralBiasAnalyzer from "@/pages/BehavioralBiasAnalyzer";
+import Dashboard from "@/pages/Dashboard";
 import Navbar from "@/components/layout/Navbar";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/sentiment" component={SentimentAnalysis} />
       <Route path="/stocks" component={StockAnalysis} />
       <Route path="/recommendations" component={InvestmentRecommendations} />
