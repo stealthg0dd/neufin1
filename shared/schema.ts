@@ -363,73 +363,7 @@ export const sessions = pgTable(
   }
 );
 
-// Plaid Integration Schema
-export const plaidItems = pgTable("plaid_items", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id),
-  accessToken: text("access_token").notNull(),
-  itemId: text("item_id").notNull().unique(),
-  institutionId: text("institution_id"),
-  institutionName: text("institution_name"),
-  status: text("status").default("active"), // active, error, disconnected
-  errorCode: text("error_code"),
-  errorMessage: text("error_message"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const plaidItemsRelations = relations(plaidItems, ({ one, many }) => ({
-  user: one(users, {
-    fields: [plaidItems.userId],
-    references: [users.id],
-  }),
-  accounts: many(plaidAccounts),
-}));
-
-export const plaidAccounts = pgTable("plaid_accounts", {
-  id: serial("id").primaryKey(),
-  plaidItemId: integer("plaid_item_id").notNull().references(() => plaidItems.id),
-  accountId: text("account_id").notNull().unique(),
-  name: text("name").notNull(),
-  mask: text("mask"),
-  officialName: text("official_name"),
-  type: text("type").notNull(), // investment, credit, depository, etc.
-  subtype: text("subtype"),
-  status: text("status").default("active"),
-  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const plaidAccountsRelations = relations(plaidAccounts, ({ one, many }) => ({
-  plaidItem: one(plaidItems, {
-    fields: [plaidAccounts.plaidItemId],
-    references: [plaidItems.id],
-  }),
-  holdings: many(plaidHoldings),
-  transactions: many(plaidInvestmentTransactions),
-}));
-
-export const plaidHoldings = pgTable("plaid_holdings", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id").notNull().references(() => plaidAccounts.id),
-  securityId: text("security_id").notNull(),
-  symbol: text("symbol"),
-  name: text("name"),
-  quantity: real("quantity").notNull(),
-  costBasis: doublePrecision("cost_basis"),
-  institutionPrice: doublePrecision("institution_price"),
-  institutionValue: doublePrecision("institution_value"),
-  isoCurrencyCode: text("iso_currency_code"),
-  unofficialCurrencyCode: text("unofficial_currency_code"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const plaidHoldingsRelations = relations(plaidHoldings, ({ one }) => ({
-  account: one(plaidAccounts, {
-    fields: [plaidHoldings.accountId],
-    references: [plaidAccounts.id],
-  }),
-}));
+// Note: Plaid Integration Schema is defined further down in this file
 
 export const plaidInvestmentTransactions = pgTable("plaid_investment_transactions", {
   id: serial("id").primaryKey(),
