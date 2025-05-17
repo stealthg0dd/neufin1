@@ -28,7 +28,7 @@ export const HoldingsList: React.FC = () => {
     isLoading,
     error,
     refetch
-  } = useQuery({
+  } = useQuery<Holding[]>({
     queryKey: ['/api/plaid/holdings'],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -71,7 +71,7 @@ export const HoldingsList: React.FC = () => {
   const holdingsBySymbol: Record<string, Holding[]> = {};
   
   if (holdings && holdings.length > 0) {
-    holdings.forEach((holding: Holding) => {
+    holdings.forEach((holding) => {
       const symbol = holding.symbol || 'Unknown';
       if (!holdingsBySymbol[symbol]) {
         holdingsBySymbol[symbol] = [];

@@ -1,28 +1,47 @@
 /**
- * Utility functions for working with dates in the Plaid API
+ * Date utility functions for Plaid API
  */
 
 /**
- * Get a date object for today
+ * Format a date for Plaid API requests
+ * @param date Date to format
+ * @returns formatted date string (YYYY-MM-DD)
  */
-export function getToday(): Date {
-  return new Date();
+export function formatDateForPlaid(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
 /**
- * Get a date object for N days ago
- * @param days Number of days to go back
+ * Get a date for the specified number of days ago
+ * @param daysAgo Number of days ago
+ * @returns Date object
  */
-export function getDaysAgo(days: number): Date {
+export function getDateDaysAgo(daysAgo: number): Date {
   const date = new Date();
-  date.setDate(date.getDate() - days);
+  date.setDate(date.getDate() - daysAgo);
   return date;
 }
 
 /**
- * Format a date as YYYY-MM-DD (required by Plaid API)
+ * Format a date in a user-friendly format
  * @param date Date to format
+ * @returns formatted date string (MMM DD, YYYY)
  */
-export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+export function formatDateForDisplay(date: Date | string): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+}
+
+/**
+ * Get the current date as a string in YYYY-MM-DD format
+ * @returns Current date as string
+ */
+export function getCurrentDateFormatted(): string {
+  return formatDateForPlaid(new Date());
 }
