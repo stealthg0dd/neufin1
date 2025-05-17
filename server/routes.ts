@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import sentientRouter from "./modules/sentient/controller";
 import nemoRouter from "./modules/nemo/controller";
+import { o2Router } from "./modules/o2/controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for Neufin financial platform
@@ -12,6 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount Nemo API Router
   app.use("/api/nemo", nemoRouter);
+  
+  // Mount O2 Investment Recommendation API Router
+  app.use("/api/o2", o2Router);
   
   // Legacy Sentiment Analysis API Routes 
   // (These will be migrated to the Sentient module in the future)

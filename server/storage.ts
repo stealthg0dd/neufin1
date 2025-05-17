@@ -56,9 +56,11 @@ export interface IStorage {
   getUserPreferences(userId: number): Promise<InvestmentPreference | undefined>;
   createOrUpdatePreferences(preferences: InsertInvestmentPreference): Promise<InvestmentPreference>;
   
-  // AI recommendations
+  // AI recommendations (Neufin O2 Module)
   getLatestRecommendations(limit?: number): Promise<AiRecommendation[]>;
+  getLatestRecommendationsForUser(userId: number, limit?: number): Promise<AiRecommendation[]>;
   getSymbolRecommendations(symbol: string): Promise<AiRecommendation[]>;
+  getRecommendationsByTimeHorizon(timeHorizon: string, limit?: number): Promise<AiRecommendation[]>;
   createRecommendation(recommendation: InsertAiRecommendation): Promise<AiRecommendation>;
   
   // Behavioral biases
@@ -178,11 +180,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // AI recommendations
+  // AI recommendations (Neufin O2 Module)
   async getLatestRecommendations(limit: number = 10): Promise<AiRecommendation[]> {
     return await db
       .select()
       .from(aiRecommendations)
+      .orderBy(desc(aiRecommendations.createdAt))
+      .limit(limit);
+  }
+  
+  async getLatestRecommendationsForUser(userId: number, limit: number = 10): Promise<AiRecommendation[]> {
+    return await db
+      .select()
+      .from(aiRecommendations)
+      .where(eq(aiRecommendations.userId, userId))
       .orderBy(desc(aiRecommendations.createdAt))
       .limit(limit);
   }
@@ -193,6 +204,15 @@ export class DatabaseStorage implements IStorage {
       .from(aiRecommendations)
       .where(eq(aiRecommendations.symbol, symbol))
       .orderBy(desc(aiRecommendations.createdAt));
+  }
+  
+  async getRecommendationsByTimeHorizon(timeHorizon: string, limit: number = 10): Promise<AiRecommendation[]> {
+    return await db
+      .select()
+      .from(aiRecommendations)
+      .where(eq(aiRecommendations.timeHorizon, timeHorizon))
+      .orderBy(desc(aiRecommendations.createdAt))
+      .limit(limit);
   }
   
   async createRecommendation(recommendation: InsertAiRecommendation): Promise<AiRecommendation> {
