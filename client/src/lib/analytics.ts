@@ -20,12 +20,14 @@ export const initAnalytics = () => {
     
     // Set up any additional configuration if needed
     // For example, enable enhanced measurement features
-    window.gtag('config', measurementId, {
-      send_page_view: true,
-      cookie_domain: 'auto',
-      cookie_flags: 'SameSite=None;Secure',
-      cookie_prefix: '_ga'
-    });
+    if (typeof window.gtag === 'function') {
+      window.gtag('config', measurementId, {
+        send_page_view: true,
+        cookie_domain: 'auto',
+        cookie_flags: 'SameSite=None;Secure',
+        cookie_prefix: '_ga'
+      });
+    }
   } else {
     console.warn('Google Analytics initialization may have failed');
   }

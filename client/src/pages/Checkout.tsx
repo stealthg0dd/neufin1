@@ -23,6 +23,17 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 // Form component to handle payment submission
+// Shared function for plan details to be accessible both in CheckoutForm and Checkout components
+const getPlanDetailsForCheckout = (planId: string) => {
+  const plans: Record<string, { name: string, price: number }> = {
+    basic: { name: "Basic", price: 9.99 },
+    pro: { name: "Pro", price: 29.99 },
+    enterprise: { name: "Enterprise", price: 99.99 }
+  };
+
+  return plans[planId] || { name: "Subscription", price: 0 };
+};
+
 function CheckoutForm({ plan }: { plan: string }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -65,7 +76,7 @@ function CheckoutForm({ plan }: { plan: string }) {
         
         // Track the successful purchase
         if (typeof window !== 'undefined' && window.gtag) {
-          const currentPlan = getPlanDetails(plan);
+          const currentPlan = getPlanDetailsForCheckout(plan);
           const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
           
           // Track for Google Analytics
@@ -166,17 +177,8 @@ export default function Checkout() {
     setPlan(planParam);
   }, [location, navigate]);
 
-  const getPlanDetails = (planId: string) => {
-    const plans: Record<string, { name: string, price: number }> = {
-      basic: { name: "Basic", price: 9.99 },
-      pro: { name: "Pro", price: 29.99 },
-      enterprise: { name: "Enterprise", price: 99.99 }
-    };
-
-    return plans[planId] || { name: "Subscription", price: 0 };
-  };
-
-  const planDetails = getPlanDetails(plan);
+  // Get plan details for display in the UI
+  const planDetails = plan ? getPlanDetailsForCheckout(plan) : { name: "Subscription", price: 0 };
 
   if (!clientSecret) {
     return (
