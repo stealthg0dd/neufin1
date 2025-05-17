@@ -22,6 +22,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount Market Data API Router
   app.use("/api/market-data", marketDataRouter);
   
+  // Mount Behavioral Bias Analyzer (BBA) API Router
+  app.use("/api/bba", bbaController);
+  
   // Legacy Sentiment Analysis API Routes 
   // (These will be migrated to the Sentient module in the future)
   app.get("/api/sentiment/overall", (req, res) => {

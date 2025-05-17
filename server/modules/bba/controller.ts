@@ -42,12 +42,14 @@ router.post('/analyze', async (req: Request, res: Response) => {
     // Save the bias analysis report
     const reportData = {
       userId,
+      title: `Bias Analysis Report - ${new Date().toLocaleDateString()}`,
+      summary: `Analysis detected ${result.detectedBiases.length} biases with an overall score of ${result.overallScore}/100.`,
+      details: result.detectedBiases,
+      primaryBiases: result.detectedBiases,
       overallScore: result.overallScore,
-      primaryBiases: JSON.stringify(result.detectedBiases),
-      improvementSuggestions: JSON.stringify(result.improvementSuggestions),
-      comparisonData: result.comparisonAnalysis 
-        ? JSON.stringify(result.comparisonAnalysis) 
-        : null
+      improvementSuggestions: result.improvementSuggestions,
+      analysisType: result.premium ? 'premium' : 'standard',
+      comparisonData: result.comparisonAnalysis || undefined
     };
     
     // Create bias report
