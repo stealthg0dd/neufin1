@@ -1,7 +1,18 @@
 import { Route, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "./Redirect";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+
+// Internal Redirect component
+function Redirect({ to }: { to: string }) {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation(to);
+  }, [to, setLocation]);
+
+  return null;
+}
 
 interface ProtectedRouteProps {
   path: string;

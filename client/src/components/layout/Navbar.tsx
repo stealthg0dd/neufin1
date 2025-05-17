@@ -96,8 +96,12 @@ const Navbar = () => {
           </div>
           
           {!isAuthenticated && (
-            <Button size="sm" className="hidden sm:flex">
-              Get Started
+            <Button 
+              size="sm" 
+              className="hidden sm:flex"
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Start Free Trial
             </Button>
           )}
           
