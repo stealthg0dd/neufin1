@@ -9,6 +9,10 @@ import {
   behavioralBiases,
   userTrades,
   biasAnalysisReports,
+  plaidItems,
+  plaidAccounts,
+  plaidHoldings,
+  plaidInvestmentTransactions,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -29,7 +33,15 @@ import {
   type UserTrade,
   type InsertUserTrade,
   type BiasAnalysisReport,
-  type InsertBiasAnalysisReport
+  type InsertBiasAnalysisReport,
+  type PlaidItem,
+  type InsertPlaidItem,
+  type PlaidAccount,
+  type InsertPlaidAccount,
+  type PlaidHolding,
+  type InsertPlaidHolding,
+  type PlaidInvestmentTransaction,
+  type InsertPlaidInvestmentTransaction
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -88,6 +100,33 @@ export interface IStorage {
   // User bias score management
   updateUserBiasScore(userId: number, score: number, flags?: any[]): Promise<User>;
   getUserWithBiasFlags(userId: number): Promise<User | undefined>;
+  
+  // Plaid integration - Items
+  getPlaidItemsByUserId(userId: string): Promise<PlaidItem[]>;
+  getPlaidItemById(id: number): Promise<PlaidItem | undefined>;
+  getPlaidItemByItemId(itemId: string): Promise<PlaidItem | undefined>;
+  getPlaidItemByAccessToken(accessToken: string): Promise<PlaidItem | undefined>;
+  createPlaidItem(item: InsertPlaidItem): Promise<PlaidItem>;
+  updatePlaidItemStatus(id: number, status: string, errorCode?: string, errorMessage?: string): Promise<PlaidItem>;
+  deletePlaidItem(id: number): Promise<void>;
+  getPlaidAccessTokensByUserId(userId: string): Promise<string[]>;
+  
+  // Plaid integration - Accounts
+  getPlaidAccountsByItemId(itemId: number): Promise<PlaidAccount[]>;
+  getPlaidAccountById(id: number): Promise<PlaidAccount | undefined>;
+  getPlaidAccountByAccountId(accountId: string): Promise<PlaidAccount | undefined>;
+  createPlaidAccount(account: InsertPlaidAccount): Promise<PlaidAccount>;
+  updatePlaidAccountStatus(id: number, status: string): Promise<PlaidAccount>;
+  
+  // Plaid integration - Holdings
+  getPlaidHoldingsByAccountId(accountId: number): Promise<PlaidHolding[]>;
+  getPlaidHoldingsBySymbol(userId: string, symbol: string): Promise<PlaidHolding[]>;
+  createOrUpdatePlaidHolding(holding: InsertPlaidHolding): Promise<PlaidHolding>;
+  
+  // Plaid integration - Investment Transactions
+  getPlaidInvestmentTransactionsByAccountId(accountId: number, limit?: number): Promise<PlaidInvestmentTransaction[]>;
+  getPlaidInvestmentTransactionByPlaidId(plaidTransactionId: string): Promise<PlaidInvestmentTransaction | undefined>;
+  createPlaidInvestmentTransaction(transaction: InsertPlaidInvestmentTransaction): Promise<PlaidInvestmentTransaction>;
 }
 
 // Database implementation of the storage interface
