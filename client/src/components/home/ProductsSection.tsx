@@ -83,7 +83,7 @@ export default function ProductsSection() {
   return (
     <section id="products" className="py-16 bg-neutral-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-3">
             Our Products
           </span>
@@ -93,6 +93,69 @@ export default function ProductsSection() {
           <p className="mt-4 text-xl text-neutral-600 max-w-3xl mx-auto">
             Four powerful modules designed to transform your investment strategy
           </p>
+        </div>
+        
+        {/* Product Icons & Descriptions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div 
+            className={`bg-white p-6 rounded-xl shadow-sm border-2 transition-all cursor-pointer ${
+              activeTab === "sentient" ? "border-primary" : "border-transparent hover:border-gray-200"
+            }`}
+            onClick={() => setActiveTab("sentient")}
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Brain className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Neufin Sentient</h3>
+            <p className="text-neutral-600 text-sm">
+              Real-time market sentiment analysis powered by AI to detect market mood shifts before they impact prices.
+            </p>
+          </div>
+          
+          <div 
+            className={`bg-white p-6 rounded-xl shadow-sm border-2 transition-all cursor-pointer ${
+              activeTab === "nemo" ? "border-primary" : "border-transparent hover:border-gray-200"
+            }`}
+            onClick={() => setActiveTab("nemo")}
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <BarChart2 className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Neufin Nemo</h3>
+            <p className="text-neutral-600 text-sm">
+              Comprehensive stock intelligence with advanced technical indicators, fundamentals, and predictive analytics.
+            </p>
+          </div>
+          
+          <div 
+            className={`bg-white p-6 rounded-xl shadow-sm border-2 transition-all cursor-pointer ${
+              activeTab === "o2" ? "border-primary" : "border-transparent hover:border-gray-200"
+            }`}
+            onClick={() => setActiveTab("o2")}
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Lightbulb className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Neufin O2</h3>
+            <p className="text-neutral-600 text-sm">
+              AI-powered investment recommendations personalized to your risk tolerance, goals, and market conditions.
+            </p>
+          </div>
+          
+          <div 
+            className={`bg-white p-6 rounded-xl shadow-sm border-2 transition-all cursor-pointer ${
+              activeTab === "bba" ? "border-primary" : "border-transparent hover:border-gray-200"
+            }`}
+            onClick={() => setActiveTab("bba")}
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <PieChart className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Neufin BBA</h3>
+            <p className="text-neutral-600 text-sm">
+              Behavioral Bias Analyzer that identifies emotional trading patterns and provides corrective recommendations.
+            </p>
+          </div>
         </div>
 
         {/* Product Tabs */}

@@ -14,15 +14,19 @@ export default function HeroSection() {
               <h2 className="text-2xl font-bold">NEURAL POWERED FINANCE UNLOCKED</h2>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight">
-              Financial intelligence, <span className="text-primary">powered by AI</span>
+              AI-Driven Financial Insights <span className="text-primary">to Optimize Your Investment Strategy</span>
             </h1>
             <p className="mt-6 text-xl text-neutral-600 max-w-3xl">
               Make smarter investment decisions with real-time market sentiment analysis,
               stock intelligence, and personalized recommendations.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-              <Button size="lg" className="bg-primary hover:bg-primary-dark transition-colors">
-                Start free trial
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary-dark transition-colors"
+                asChild
+              >
+                <a href="/api/login">Start free trial</a>
               </Button>
               <Button
                 variant="outline"
