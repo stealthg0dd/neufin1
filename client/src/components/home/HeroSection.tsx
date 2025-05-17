@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Star, StarHalf } from "lucide-react";
-import dashboardPreview from "../../assets/dashboard-preview.svg";
+import financialDashboard from "../../assets/financial-dashboard.png";
+import neufinLogo from "../../assets/neufin-logo.png";
 
 export default function HeroSection() {
   return (
@@ -8,6 +9,10 @@ export default function HeroSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
           <div className="lg:col-span-6 mb-12 lg:mb-0">
+            <div className="flex items-center mb-6">
+              <img src={neufinLogo} alt="Neufin AI Logo" className="h-16 mr-4" />
+              <h2 className="text-2xl font-bold">NEURAL POWERED FINANCE UNLOCKED</h2>
+            </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight">
               Financial intelligence, <span className="text-primary">powered by AI</span>
             </h1>
