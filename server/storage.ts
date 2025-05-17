@@ -243,7 +243,7 @@ export class DatabaseStorage implements IStorage {
     return newRecommendation;
   }
   
-  // Behavioral biases
+  // Behavioral biases (Neufin BBA Module)
   async getUserBiases(userId: number): Promise<BehavioralBias[]> {
     return await db
       .select()
@@ -255,6 +255,84 @@ export class DatabaseStorage implements IStorage {
   async createBias(bias: InsertBehavioralBias): Promise<BehavioralBias> {
     const [newBias] = await db.insert(behavioralBiases).values(bias).returning();
     return newBias;
+  }
+  
+  // User trades methods (for BBA analysis)
+  async getUserTrades(userId: number, limit: number = 50): Promise<UserTrade[]> {
+    return await db
+      .select()
+      .from(userTrades)
+      .where(eq(userTrades.userId, userId))
+      .orderBy(desc(userTrades.tradeDate))
+      .limit(limit);
+  }
+  
+  async getTradesBySymbol(userId: number, symbol: string): Promise<UserTrade[]> {
+    return await db
+      .select()
+      .from(userTrades)
+      .where(and(
+        eq(userTrades.userId, userId),
+        eq(userTrades.symbol, symbol)
+      ))
+      .orderBy(desc(userTrades.tradeDate));
+  }
+  
+  async createTrade(trade: InsertUserTrade): Promise<UserTrade> {
+    const [newTrade] = await db
+      .insert(userTrades)
+      .values(trade)
+      .returning();
+    return newTrade;
+  }
+  
+  // Bias analysis reports methods
+  async getUserBiasReports(userId: number, limit: number = 10): Promise<BiasAnalysisReport[]> {
+    return await db
+      .select()
+      .from(biasAnalysisReports)
+      .where(eq(biasAnalysisReports.userId, userId))
+      .orderBy(desc(biasAnalysisReports.createdAt))
+      .limit(limit);
+  }
+  
+  async getLatestBiasReport(userId: number): Promise<BiasAnalysisReport | undefined> {
+    const [report] = await db
+      .select()
+      .from(biasAnalysisReports)
+      .where(eq(biasAnalysisReports.userId, userId))
+      .orderBy(desc(biasAnalysisReports.createdAt))
+      .limit(1);
+    return report;
+  }
+  
+  async createBiasReport(report: InsertBiasAnalysisReport): Promise<BiasAnalysisReport> {
+    const [newReport] = await db
+      .insert(biasAnalysisReports)
+      .values(report)
+      .returning();
+    return newReport;
+  }
+  
+  // User bias score management
+  async updateUserBiasScore(userId: number, score: number, flags: any[] = []): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        biasScore: score,
+        biasFlags: flags.length ? JSON.stringify(flags) : undefined
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+  
+  async getUserWithBiasFlags(userId: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    return user;
   }
 }
 

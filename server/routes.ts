@@ -5,6 +5,7 @@ import sentientRouter from "./modules/sentient/controller";
 import nemoRouter from "./modules/nemo/controller";
 import { o2Router } from "./modules/o2/controller";
 import { marketDataRouter } from "./modules/market-data/controller";
+import { bbaController } from "./modules/bba/controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for Neufin financial platform
