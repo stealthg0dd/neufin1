@@ -7,6 +7,8 @@ import {
   investmentPreferences, 
   aiRecommendations, 
   behavioralBiases,
+  userTrades,
+  biasAnalysisReports,
   type User, 
   type InsertUser, 
   type Portfolio, 
@@ -22,7 +24,11 @@ import {
   type AiRecommendation,
   type InsertAiRecommendation,
   type BehavioralBias,
-  type InsertBehavioralBias
+  type InsertBehavioralBias,
+  type UserTrade,
+  type InsertUserTrade,
+  type BiasAnalysisReport,
+  type InsertBiasAnalysisReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -63,9 +69,23 @@ export interface IStorage {
   getRecommendationsByTimeHorizon(timeHorizon: string, limit?: number): Promise<AiRecommendation[]>;
   createRecommendation(recommendation: InsertAiRecommendation): Promise<AiRecommendation>;
   
-  // Behavioral biases
+  // Behavioral biases (Neufin BBA Module)
   getUserBiases(userId: number): Promise<BehavioralBias[]>;
   createBias(bias: InsertBehavioralBias): Promise<BehavioralBias>;
+  
+  // User trades (for BBA analysis)
+  getUserTrades(userId: number, limit?: number): Promise<UserTrade[]>;
+  getTradesBySymbol(userId: number, symbol: string): Promise<UserTrade[]>;
+  createTrade(trade: InsertUserTrade): Promise<UserTrade>;
+  
+  // Bias analysis reports
+  getUserBiasReports(userId: number, limit?: number): Promise<BiasAnalysisReport[]>;
+  getLatestBiasReport(userId: number): Promise<BiasAnalysisReport | undefined>;
+  createBiasReport(report: InsertBiasAnalysisReport): Promise<BiasAnalysisReport>;
+  
+  // User bias score management
+  updateUserBiasScore(userId: number, score: number, flags?: any[]): Promise<User>;
+  getUserWithBiasFlags(userId: number): Promise<User | undefined>;
 }
 
 // Database implementation of the storage interface

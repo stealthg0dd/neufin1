@@ -11,6 +11,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   fullName: text("full_name"),
   role: text("role").default("user"),
+  biasScore: integer("bias_score"), // Overall bias score for BBA module
+  biasFlags: jsonb("bias_flags"), // JSON array of active bias flags
+  hasPremium: boolean("has_premium").default(false), // Flag for premium features
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -140,6 +143,29 @@ export const aiRecommendationsRelations = relations(aiRecommendations, ({ one })
   }),
 }));
 
+// User Trades (for BBA analysis)
+export const userTrades = pgTable("user_trades", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  symbol: text("symbol").notNull(),
+  action: text("action").notNull(), // buy, sell
+  shares: real("shares").notNull(),
+  price: doublePrecision("price").notNull(),
+  tradeDate: timestamp("trade_date").defaultNow().notNull(),
+  notes: text("notes"),
+  emotionalState: text("emotional_state"), // excited, fearful, confident, etc.
+  marketContext: jsonb("market_context"), // market conditions, news events
+  tradingStrategy: text("trading_strategy"), // swing, day-trade, long-term, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userTradesRelations = relations(userTrades, ({ one }) => ({
+  user: one(users, {
+    fields: [userTrades.userId],
+    references: [users.id],
+  }),
+}));
+
 // Behavioral Biases
 export const behavioralBiases = pgTable("behavioral_biases", {
   id: serial("id").primaryKey(),
@@ -148,12 +174,38 @@ export const behavioralBiases = pgTable("behavioral_biases", {
   score: integer("score").notNull(), // 0-100 score indicating strength of bias
   impact: text("impact").notNull(), // low, medium, high
   suggestion: text("suggestion"), // Corrective suggestion
+  description: text("description"), // Detailed description of the bias
   detectionDate: timestamp("detection_date").defaultNow().notNull(),
+  metadata: jsonb("metadata"), // Additional context for detection
+  evidence: jsonb("evidence"), // Array of examples that led to detection
+  premium: boolean("premium").default(false), // If this is a premium insight
 });
 
 export const behavioralBiasesRelations = relations(behavioralBiases, ({ one }) => ({
   user: one(users, {
     fields: [behavioralBiases.userId],
+    references: [users.id],
+  }),
+}));
+
+// Bias Analysis Reports (aggregated reports)
+export const biasAnalysisReports = pgTable("bias_analysis_reports", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  details: jsonb("details").notNull(), // Detailed analysis in JSON format
+  primaryBiases: jsonb("primary_biases").notNull(), // Array of main biases
+  overallScore: integer("overall_score").notNull(), // 0-100 score
+  improvementSuggestions: jsonb("improvement_suggestions"), // Array of actionable items
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  analysisType: text("analysis_type").default("standard"), // standard, deep, premium
+  comparisonData: jsonb("comparison_data"), // Bias-free portfolio comparison
+});
+
+export const biasAnalysisReportsRelations = relations(biasAnalysisReports, ({ one }) => ({
+  user: one(users, {
+    fields: [biasAnalysisReports.userId],
     references: [users.id],
   }),
 }));
@@ -220,12 +272,41 @@ export const insertAiRecommendationSchema = createInsertSchema(aiRecommendations
   updatedAt: true
 });
 
+export const insertUserTradeSchema = createInsertSchema(userTrades).pick({
+  userId: true,
+  symbol: true,
+  action: true,
+  shares: true,
+  price: true,
+  tradeDate: true,
+  notes: true,
+  emotionalState: true,
+  marketContext: true,
+  tradingStrategy: true,
+});
+
 export const insertBehavioralBiasSchema = createInsertSchema(behavioralBiases).pick({
   userId: true,
   biasType: true,
   score: true,
-  impact: true,
+  impact: true, 
   suggestion: true,
+  description: true,
+  metadata: true,
+  evidence: true,
+  premium: true,
+});
+
+export const insertBiasAnalysisReportSchema = createInsertSchema(biasAnalysisReports).pick({
+  userId: true,
+  title: true,
+  summary: true,
+  details: true,
+  primaryBiases: true,
+  overallScore: true,
+  improvementSuggestions: true,
+  analysisType: true,
+  comparisonData: true,
 });
 
 // Type definitions
@@ -250,8 +331,14 @@ export type InvestmentPreference = typeof investmentPreferences.$inferSelect;
 export type InsertAiRecommendation = z.infer<typeof insertAiRecommendationSchema>;
 export type AiRecommendation = typeof aiRecommendations.$inferSelect;
 
+export type InsertUserTrade = z.infer<typeof insertUserTradeSchema>;
+export type UserTrade = typeof userTrades.$inferSelect;
+
 export type InsertBehavioralBias = z.infer<typeof insertBehavioralBiasSchema>;
 export type BehavioralBias = typeof behavioralBiases.$inferSelect;
+
+export type InsertBiasAnalysisReport = z.infer<typeof insertBiasAnalysisReportSchema>;
+export type BiasAnalysisReport = typeof biasAnalysisReports.$inferSelect;
 
 // Neufin Nemo (Stock Intelligence) Schema
 
