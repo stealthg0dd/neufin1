@@ -67,7 +67,14 @@ export function AuthButton() {
     <Button 
       variant="outline" 
       size="sm" 
-      onClick={() => window.location.href = "/api/login"}
+      onClick={() => {
+        // Use direct form submission instead of changing location
+        const form = document.createElement('form');
+        form.method = 'get';
+        form.action = '/api/login';
+        document.body.appendChild(form);
+        form.submit();
+      }}
     >
       Sign In
     </Button>
