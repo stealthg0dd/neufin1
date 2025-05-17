@@ -63,6 +63,31 @@ function CheckoutForm({ plan }: { plan: string }) {
           description: "Thank you for your purchase!",
         });
         
+        // Track the successful purchase
+        if (typeof window !== 'undefined' && window.gtag) {
+          const planDetails = getPlanDetails(plan);
+          const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          
+          // Track for Google Analytics
+          window.gtag('event', 'purchase', {
+            transaction_id: transactionId,
+            value: planDetails.price,
+            currency: 'USD',
+            items: [{
+              item_name: planDetails.name,
+              price: planDetails.price
+            }]
+          });
+          
+          // Track for Google Ads conversions
+          window.gtag('event', 'conversion', {
+            'send_to': 'AW-17089203420/purchase_complete',
+            'value': planDetails.price,
+            'currency': 'USD',
+            'transaction_id': transactionId
+          });
+        }
+        
         // Wait 2 seconds before redirecting to dashboard
         setTimeout(() => {
           navigate('/dashboard');
