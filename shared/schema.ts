@@ -263,21 +263,21 @@ export const stockIndicators = pgTable("stock_indicators", {
   id: serial("id").primaryKey(),
   stockId: integer("stock_id").references(() => stocks.id).notNull(),
   date: timestamp("date").notNull(),
-  rsi14: numeric("rsi_14"),
-  macd: numeric("macd"),
-  macdSignal: numeric("macd_signal"),
-  macdHistogram: numeric("macd_histogram"),
-  ema20: numeric("ema_20"),
-  ema50: numeric("ema_50"),
-  ema200: numeric("ema_200"),
-  sma20: numeric("sma_20"),
-  sma50: numeric("sma_50"),
-  sma200: numeric("sma_200"),
-  bollingerUpper: numeric("bollinger_upper"),
-  bollingerMiddle: numeric("bollinger_middle"),
-  bollingerLower: numeric("bollinger_lower"),
-  momentum: numeric("momentum"),
-  volatility: numeric("volatility"),
+  rsi14: decimal("rsi_14"),
+  macd: decimal("macd"),
+  macdSignal: decimal("macd_signal"),
+  macdHistogram: decimal("macd_histogram"),
+  ema20: decimal("ema_20"),
+  ema50: decimal("ema_50"),
+  ema200: decimal("ema_200"),
+  sma20: decimal("sma_20"),
+  sma50: decimal("sma_50"),
+  sma200: decimal("sma_200"),
+  bollingerUpper: decimal("bollinger_upper"),
+  bollingerMiddle: decimal("bollinger_middle"),
+  bollingerLower: decimal("bollinger_lower"),
+  momentum: decimal("momentum"),
+  volatility: decimal("volatility"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -286,7 +286,7 @@ export const stockAlerts = pgTable("stock_alerts", {
   stockId: integer("stock_id").references(() => stocks.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   alertType: text("alert_type").notNull(), // breakout, volatility, price_target, etc.
-  threshold: numeric("threshold"),
+  threshold: decimal("threshold"),
   triggered: boolean("triggered").notNull().default(false),
   message: text("message"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -346,70 +346,70 @@ export const stockAnalysisRelations = relations(stockAnalysis, ({ one }) => ({
 }));
 
 // Schema definitions for insert operations
-export const insertStockSchema = createInsertSchema(stocks).pick({
-  symbol: true,
-  name: true,
-  sector: true,
-  industry: true,
-  marketCap: true,
-  peRatio: true,
-  dividendYield: true,
-  beta: true,
-  fiftyTwoWeekHigh: true,
-  fiftyTwoWeekLow: true,
-  averageVolume: true,
-  metadata: true,
+export const insertStockSchema = createInsertSchema(stocks, {
+  symbol: z.string(),
+  name: z.string(),
+  sector: z.string().optional(),
+  industry: z.string().optional(),
+  marketCap: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  peRatio: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  dividendYield: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  beta: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  fiftyTwoWeekHigh: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  fiftyTwoWeekLow: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  averageVolume: z.number().optional(),
+  metadata: z.any().optional(),
 });
 
-export const insertStockPriceSchema = createInsertSchema(stockPrices).pick({
-  stockId: true,
-  date: true,
-  open: true,
-  high: true,
-  low: true,
-  close: true,
-  adjustedClose: true,
-  volume: true,
+export const insertStockPriceSchema = createInsertSchema(stockPrices, {
+  stockId: z.number(),
+  date: z.date(),
+  open: z.string().or(z.number()).transform(val => val.toString()),
+  high: z.string().or(z.number()).transform(val => val.toString()),
+  low: z.string().or(z.number()).transform(val => val.toString()),
+  close: z.string().or(z.number()).transform(val => val.toString()),
+  adjustedClose: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  volume: z.number()
 });
 
-export const insertStockIndicatorSchema = createInsertSchema(stockIndicators).pick({
-  stockId: true,
-  date: true,
-  rsi14: true,
-  macd: true,
-  macdSignal: true,
-  macdHistogram: true,
-  ema20: true,
-  ema50: true,
-  ema200: true,
-  sma20: true,
-  sma50: true,
-  sma200: true,
-  bollingerUpper: true,
-  bollingerMiddle: true,
-  bollingerLower: true,
-  momentum: true,
-  volatility: true,
+export const insertStockIndicatorSchema = createInsertSchema(stockIndicators, {
+  stockId: z.number(),
+  date: z.date(),
+  rsi14: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  macd: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  macdSignal: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  macdHistogram: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  ema20: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  ema50: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  ema200: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  sma20: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  sma50: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  sma200: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  bollingerUpper: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  bollingerMiddle: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  bollingerLower: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  momentum: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  volatility: z.string().or(z.number()).optional().transform(val => val?.toString())
 });
 
-export const insertStockAlertSchema = createInsertSchema(stockAlerts).pick({
-  stockId: true,
-  userId: true,
-  alertType: true,
-  threshold: true,
-  triggered: true,
-  message: true,
+export const insertStockAlertSchema = createInsertSchema(stockAlerts, {
+  stockId: z.number(),
+  userId: z.number(),
+  alertType: z.string(),
+  threshold: z.string().or(z.number()).optional().transform(val => val?.toString()),
+  triggered: z.boolean().default(false),
+  message: z.string().optional()
 });
 
-export const insertStockAnalysisSchema = createInsertSchema(stockAnalysis).pick({
-  stockId: true,
-  date: true,
-  shortTermOutlook: true,
-  longTermOutlook: true,
-  supportLevels: true,
-  resistanceLevels: true,
-  keyEvents: true,
-  aiSummary: true,
+export const insertStockAnalysisSchema = createInsertSchema(stockAnalysis, {
+  stockId: z.number(),
+  date: z.date().default(() => new Date()),
+  shortTermOutlook: z.string().optional(),
+  longTermOutlook: z.string().optional(),
+  supportLevels: z.any().optional(),
+  resistanceLevels: z.any().optional(),
+  keyEvents: z.any().optional(),
+  aiSummary: z.string().optional()
 });
 
 // Types for database operations
