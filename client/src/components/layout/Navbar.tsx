@@ -88,9 +88,9 @@ const Navbar = () => {
                 Bias Analyzer
               </Button>
             </Link>
-            <Link href="/accounts">
+            <Link href="/investment-accounts">
               <Button 
-                variant={location === "/accounts" ? "default" : "ghost"} 
+                variant={location === "/investment-accounts" ? "default" : "ghost"} 
                 className="text-sm h-9"
               >
                 <Wallet className="mr-1.5 h-4 w-4" />
