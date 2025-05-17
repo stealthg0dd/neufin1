@@ -179,7 +179,7 @@ export async function deletePlaidItem(req: Request, res: Response) {
     await storage.deletePlaidItem(itemId);
     
     res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting Plaid item:', error);
     res.status(500).json({ error: error.message });
   }
@@ -209,7 +209,7 @@ async function syncAccountsAndHoldings(itemId: number, accessToken: string) {
         await syncInvestmentHoldings(savedAccount.id, accessToken);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error syncing accounts and holdings:', error);
     throw new Error(`Failed to sync accounts: ${error.message}`);
   }
@@ -233,7 +233,7 @@ async function syncInvestmentHoldings(accountId: number, accessToken: string) {
     );
     
     // Get securities map for additional details
-    const securitiesMap = holdingsResponse.securities.reduce((map, security) => {
+    const securitiesMap = holdingsResponse.securities.reduce<Record<string, any>>((map, security) => {
       map[security.security_id] = security;
       return map;
     }, {});
@@ -255,7 +255,7 @@ async function syncInvestmentHoldings(accountId: number, accessToken: string) {
         unofficialCurrencyCode: holding.unofficial_currency_code
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error syncing investment holdings:', error);
     throw new Error(`Failed to sync holdings: ${error.message}`);
   }

@@ -28,13 +28,11 @@ export function getDateDaysAgo(daysAgo: number): Date {
  * @returns formatted date string (MMM DD, YYYY)
  */
 export function formatDateForDisplay(date: Date | string): string {
-  if (!date) return '';
-  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return dateObj.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
   });
 }
 
