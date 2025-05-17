@@ -7,7 +7,8 @@ import {
   getInstitutionById
 } from './plaid-client';
 import { storage } from '../../storage';
-import { formatDateForPlaid, formatDateForDisplay } from '../../utils/date-utils';
+// Import date utility functions 
+import { formatDateForPlaid, formatDateForDisplay, getDateDaysAgo } from '../../utils/date-utils';
 
 // Type definitions for user auth
 type AuthenticatedRequest = Request & {
@@ -166,7 +167,7 @@ export async function getInvestmentHoldingsForUser(req: AuthenticatedRequest, re
 }
 
 // Delete a Plaid item and all associated data
-export async function deletePlaidItem(req: Request, res: Response) {
+export async function deletePlaidItem(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.claims?.sub;
     const itemId = parseInt(req.params.itemId);

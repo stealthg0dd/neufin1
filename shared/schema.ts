@@ -487,10 +487,9 @@ export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings).pick({
   name: true,
   quantity: true,
   costBasis: true,
-  institutionPrice: true,
-  institutionValue: true,
+  currentPrice: true,
+  currentValue: true,
   isoCurrencyCode: true,
-  unofficialCurrencyCode: true,
 });
 
 export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions).pick({
@@ -849,7 +848,13 @@ export const insertPlaidAccountSchema = createInsertSchema(plaidAccounts, {
 export const insertPlaidHoldingSchema = createInsertSchema(plaidHoldings, {
   accountId: z.number(),
   securityId: z.string(),
+  symbol: z.string().nullable(),
+  name: z.string().nullable(),
   quantity: z.number(),
+  costBasis: z.number().nullable(),
+  currentPrice: z.number().nullable(),
+  currentValue: z.number().nullable(),
+  isoCurrencyCode: z.string().nullable(),
 });
 
 export const insertPlaidInvestmentTransactionSchema = createInsertSchema(plaidInvestmentTransactions, {
