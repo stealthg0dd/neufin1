@@ -160,7 +160,7 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
   fear_of_missing_out: {
     id: 'fear_of_missing_out',
     name: 'Fear of Missing Out (FOMO)',
-    description: 'Making investment decisions based on anxiety that others are benefiting from opportunities you're not taking.',
+    description: 'Making investment decisions based on anxiety that others are benefiting from opportunities you are not taking.',
     impact: 'Can lead to chasing returns, buying at market peaks, and excessive risk-taking.',
     examples: [
       'Investing in cryptocurrencies or NFTs without understanding them because of hype.',
