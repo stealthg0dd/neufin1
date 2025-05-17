@@ -1,39 +1,222 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { 
+  users, 
+  portfolios, 
+  portfolioHoldings, 
+  marketSentiment, 
+  sentimentAlerts, 
+  investmentPreferences, 
+  aiRecommendations, 
+  behavioralBiases,
+  type User, 
+  type InsertUser, 
+  type Portfolio, 
+  type InsertPortfolio,
+  type PortfolioHolding,
+  type InsertPortfolioHolding,
+  type MarketSentiment,
+  type InsertMarketSentiment,
+  type SentimentAlert,
+  type InsertSentimentAlert,
+  type InvestmentPreference,
+  type InsertInvestmentPreference,
+  type AiRecommendation,
+  type InsertAiRecommendation,
+  type BehavioralBias,
+  type InsertBehavioralBias
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
-
+// Enhanced storage interface for Neufin platform
 export interface IStorage {
+  // User management
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Portfolio management
+  getPortfoliosByUserId(userId: number): Promise<Portfolio[]>;
+  getPortfolio(id: number): Promise<Portfolio | undefined>;
+  createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio>;
+  
+  // Portfolio holdings
+  getHoldingsByPortfolioId(portfolioId: number): Promise<PortfolioHolding[]>;
+  createHolding(holding: InsertPortfolioHolding): Promise<PortfolioHolding>;
+  
+  // Market sentiment
+  getLatestSentiment(symbol: string): Promise<MarketSentiment | undefined>;
+  getSymbolSentimentHistory(symbol: string, limit?: number): Promise<MarketSentiment[]>;
+  createSentiment(sentiment: InsertMarketSentiment): Promise<MarketSentiment>;
+  
+  // Sentiment alerts
+  getUserAlerts(userId: number): Promise<SentimentAlert[]>;
+  createAlert(alert: InsertSentimentAlert): Promise<SentimentAlert>;
+  
+  // Investment preferences
+  getUserPreferences(userId: number): Promise<InvestmentPreference | undefined>;
+  createOrUpdatePreferences(preferences: InsertInvestmentPreference): Promise<InvestmentPreference>;
+  
+  // AI recommendations
+  getLatestRecommendations(limit?: number): Promise<AiRecommendation[]>;
+  getSymbolRecommendations(symbol: string): Promise<AiRecommendation[]>;
+  createRecommendation(recommendation: InsertAiRecommendation): Promise<AiRecommendation>;
+  
+  // Behavioral biases
+  getUserBiases(userId: number): Promise<BehavioralBias[]>;
+  createBias(bias: InsertBehavioralBias): Promise<BehavioralBias>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  currentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.currentId = 1;
-  }
-
+// Database implementation of the storage interface
+export class DatabaseStorage implements IStorage {
+  // User management
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+  
+  // Portfolio management
+  async getPortfoliosByUserId(userId: number): Promise<Portfolio[]> {
+    return await db.select().from(portfolios).where(eq(portfolios.userId, userId));
+  }
+  
+  async getPortfolio(id: number): Promise<Portfolio | undefined> {
+    const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.id, id));
+    return portfolio;
+  }
+  
+  async createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio> {
+    const [newPortfolio] = await db.insert(portfolios).values(portfolio).returning();
+    return newPortfolio;
+  }
+  
+  // Portfolio holdings
+  async getHoldingsByPortfolioId(portfolioId: number): Promise<PortfolioHolding[]> {
+    return await db.select().from(portfolioHoldings).where(eq(portfolioHoldings.portfolioId, portfolioId));
+  }
+  
+  async createHolding(holding: InsertPortfolioHolding): Promise<PortfolioHolding> {
+    const [newHolding] = await db.insert(portfolioHoldings).values(holding).returning();
+    return newHolding;
+  }
+  
+  // Market sentiment
+  async getLatestSentiment(symbol: string): Promise<MarketSentiment | undefined> {
+    const [sentiment] = await db
+      .select()
+      .from(marketSentiment)
+      .where(eq(marketSentiment.symbol, symbol))
+      .orderBy(desc(marketSentiment.timestamp))
+      .limit(1);
+    return sentiment;
+  }
+  
+  async getSymbolSentimentHistory(symbol: string, limit: number = 30): Promise<MarketSentiment[]> {
+    return await db
+      .select()
+      .from(marketSentiment)
+      .where(eq(marketSentiment.symbol, symbol))
+      .orderBy(desc(marketSentiment.timestamp))
+      .limit(limit);
+  }
+  
+  async createSentiment(sentiment: InsertMarketSentiment): Promise<MarketSentiment> {
+    const [newSentiment] = await db.insert(marketSentiment).values(sentiment).returning();
+    return newSentiment;
+  }
+  
+  // Sentiment alerts
+  async getUserAlerts(userId: number): Promise<SentimentAlert[]> {
+    return await db.select().from(sentimentAlerts).where(eq(sentimentAlerts.userId, userId));
+  }
+  
+  async createAlert(alert: InsertSentimentAlert): Promise<SentimentAlert> {
+    const [newAlert] = await db.insert(sentimentAlerts).values(alert).returning();
+    return newAlert;
+  }
+  
+  // Investment preferences
+  async getUserPreferences(userId: number): Promise<InvestmentPreference | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(investmentPreferences)
+      .where(eq(investmentPreferences.userId, userId));
+    return preferences;
+  }
+  
+  async createOrUpdatePreferences(preferences: InsertInvestmentPreference): Promise<InvestmentPreference> {
+    // Check if preferences already exist for this user
+    const existing = await this.getUserPreferences(preferences.userId);
+    
+    if (existing) {
+      // Update existing preferences
+      const [updated] = await db
+        .update(investmentPreferences)
+        .set({
+          ...preferences,
+          updatedAt: new Date()
+        })
+        .where(eq(investmentPreferences.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new preferences
+      const [newPreferences] = await db
+        .insert(investmentPreferences)
+        .values(preferences)
+        .returning();
+      return newPreferences;
+    }
+  }
+  
+  // AI recommendations
+  async getLatestRecommendations(limit: number = 10): Promise<AiRecommendation[]> {
+    return await db
+      .select()
+      .from(aiRecommendations)
+      .orderBy(desc(aiRecommendations.createdAt))
+      .limit(limit);
+  }
+  
+  async getSymbolRecommendations(symbol: string): Promise<AiRecommendation[]> {
+    return await db
+      .select()
+      .from(aiRecommendations)
+      .where(eq(aiRecommendations.symbol, symbol))
+      .orderBy(desc(aiRecommendations.createdAt));
+  }
+  
+  async createRecommendation(recommendation: InsertAiRecommendation): Promise<AiRecommendation> {
+    const [newRecommendation] = await db
+      .insert(aiRecommendations)
+      .values(recommendation)
+      .returning();
+    return newRecommendation;
+  }
+  
+  // Behavioral biases
+  async getUserBiases(userId: number): Promise<BehavioralBias[]> {
+    return await db
+      .select()
+      .from(behavioralBiases)
+      .where(eq(behavioralBiases.userId, userId))
+      .orderBy(desc(behavioralBiases.detectionDate));
+  }
+  
+  async createBias(bias: InsertBehavioralBias): Promise<BehavioralBias> {
+    const [newBias] = await db.insert(behavioralBiases).values(bias).returning();
+    return newBias;
   }
 }
 
-export const storage = new MemStorage();
+// Use the database storage implementation
+export const storage = new DatabaseStorage();
