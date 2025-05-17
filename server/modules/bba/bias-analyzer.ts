@@ -114,7 +114,7 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
     examples: [
       'Refusing to sell a stock until it returns to the price you paid for it.',
       'Setting price targets based on past highs rather than current fundamentals.',
-      'Judging a stock as "cheap" because it's down from its all-time high, regardless of valuation.'
+      'Judging a stock as "cheap" because it\'s down from its all-time high, regardless of valuation.'
     ],
     corrections: [
       'Regularly reevaluate investments as if you were buying them today at current prices.',
@@ -164,7 +164,7 @@ export const biasDefinitions: Record<BiasType, BiasDefinition> = {
     impact: 'Can lead to chasing returns, buying at market peaks, and excessive risk-taking.',
     examples: [
       'Investing in cryptocurrencies or NFTs without understanding them because of hype.',
-      'Increasing position sizes after seeing others' outsized returns.',
+      'Increasing position sizes after seeing others\' outsized returns.',
       'Abandoning your strategy to follow trending investments.'
     ],
     corrections: [
@@ -287,38 +287,38 @@ export async function analyzeTradingBehavior(userId: number): Promise<BiasDetect
   if (!user) {
     throw new Error(`User with ID ${userId} not found`);
   }
-  
+
   // Get user's trading data
   const userTrades = await storage.getUserTrades(userId);
   const portfolios = await storage.getPortfoliosByUserId(userId);
-  
+
   // Get holdings for each portfolio
   const portfolioHoldings: PortfolioHolding[] = [];
   for (const portfolio of portfolios) {
     const holdings = await storage.getHoldingsByPortfolioId(portfolio.id);
     portfolioHoldings.push(...holdings);
   }
-  
+
   // Get user preferences
   const preferences = await storage.getUserPreferences(userId);
-  
+
   // Analyze for specific biases
   const biasAnalysis = await detectBiases(userTrades, portfolioHoldings, preferences);
-  
+
   // Calculate overall bias score (0-100, lower is better)
   const overallScore = calculateOverallBiasScore(biasAnalysis);
-  
+
   // Generate improvement suggestions
   const improvementSuggestions = generateImprovementSuggestions(biasAnalysis);
-  
+
   // Create premium features if user has premium access
   const isPremium = user.hasPremium || false;
   let comparisonAnalysis = undefined;
-  
+
   if (isPremium) {
     comparisonAnalysis = await generateBiasFreePortfolioComparison(portfolioHoldings);
   }
-  
+
   // Save the results to database
   const result: BiasDetectionResult = {
     userId,
@@ -328,14 +328,14 @@ export async function analyzeTradingBehavior(userId: number): Promise<BiasDetect
     comparisonAnalysis,
     premium: isPremium
   };
-  
+
   // Update user's bias score and flags in the database
   await storage.updateUserBiasScore(
     userId, 
     overallScore, 
     biasAnalysis.map(bias => bias.biasType)
   );
-  
+
   return result;
 }
 
@@ -349,14 +349,14 @@ async function detectBiases(
 ): Promise<BiasDetectionResult['detectedBiases']> {
   // Initial checks for common bias patterns
   const detectedBiases: BiasDetectionResult['detectedBiases'] = [];
-  
+
   // If we have no trades, return empty result
   if (trades.length === 0) {
     return [];
   }
-  
+
   // Process trade data to look for patterns
-  
+
   // Check for loss aversion
   if (hasLossAversionPatterns(trades)) {
     detectedBiases.push({
@@ -368,7 +368,7 @@ async function detectBiases(
       description: biasDefinitions.loss_aversion.description
     });
   }
-  
+
   // Check for recency bias
   if (hasRecencyBiasPatterns(trades)) {
     detectedBiases.push({
@@ -380,10 +380,10 @@ async function detectBiases(
       description: biasDefinitions.recency_bias.description
     });
   }
-  
+
   // Use AI to detect more complex patterns
   const aiDetectedBiases = await useAIForBiasDetection(trades, holdings);
-  
+
   // Combine rule-based and AI-detected biases
   return [...detectedBiases, ...aiDetectedBiases];
 }
@@ -394,13 +394,13 @@ async function detectBiases(
 function hasLossAversionPatterns(trades: UserTrade[]): boolean {
   // For demonstration, we'll implement a simplified check
   // In production, this would be much more sophisticated
-  
+
   if (trades.length < 5) return false;
-  
+
   // Count how many losing positions were held longer than winning positions
   let winningHoldTimes: number[] = [];
   let losingHoldTimes: number[] = [];
-  
+
   // Group trades by symbol to find related buy/sell pairs
   const tradesBySymbol = trades.reduce((acc, trade) => {
     if (!acc[trade.symbol]) {
@@ -409,38 +409,38 @@ function hasLossAversionPatterns(trades: UserTrade[]): boolean {
     acc[trade.symbol].push(trade);
     return acc;
   }, {} as Record<string, UserTrade[]>);
-  
+
   // Calculate hold times for winning vs losing trades
   Object.values(tradesBySymbol).forEach(symbolTrades => {
     // For simplicity, assuming buy then sell patterns
     // Real implementation would match buy and sell pairs properly
-    
+
     const buyTrades = symbolTrades.filter(t => t.action === 'buy');
     const sellTrades = symbolTrades.filter(t => t.action === 'sell');
-    
+
     // Skip if we don't have both buy and sell trades
     if (buyTrades.length === 0 || sellTrades.length === 0) return;
-    
+
     // Super simplified for demonstration
     const buyDate = new Date(buyTrades[0].tradeDate);
     const sellDate = new Date(sellTrades[0].tradeDate);
     const holdTime = sellDate.getTime() - buyDate.getTime();
     const buyPrice = buyTrades[0].price;
     const sellPrice = sellTrades[0].price;
-    
+
     if (sellPrice > buyPrice) {
       winningHoldTimes.push(holdTime);
     } else {
       losingHoldTimes.push(holdTime);
     }
   });
-  
+
   if (winningHoldTimes.length === 0 || losingHoldTimes.length === 0) return false;
-  
+
   // Calculate average hold times
   const avgWinningHoldTime = winningHoldTimes.reduce((sum, time) => sum + time, 0) / winningHoldTimes.length;
   const avgLosingHoldTime = losingHoldTimes.reduce((sum, time) => sum + time, 0) / losingHoldTimes.length;
-  
+
   // If losing positions are held significantly longer than winning positions
   return avgLosingHoldTime > (avgWinningHoldTime * 1.5);
 }
@@ -450,31 +450,31 @@ function hasLossAversionPatterns(trades: UserTrade[]): boolean {
  */
 function hasRecencyBiasPatterns(trades: UserTrade[]): boolean {
   if (trades.length < 5) return false;
-  
+
   // Sort trades by date
   const sortedTrades = [...trades].sort((a, b) => 
     new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime()
   );
-  
+
   // Get recent market trends from trade context (simplified)
   const recentTrades = sortedTrades.slice(-5);
   const olderTrades = sortedTrades.slice(0, -5);
-  
+
   if (olderTrades.length === 0) return false;
-  
+
   // Check if user is following trends that just recently emerged
   // This is simplified; a real implementation would be much more thorough
   const recentBuySymbols = new Set(recentTrades
     .filter(t => t.action === 'buy')
     .map(t => t.symbol));
-  
+
   const olderBuySymbols = new Set(olderTrades
     .filter(t => t.action === 'buy')
     .map(t => t.symbol));
-  
+
   // If user is buying completely different symbols in recent trades
   const commonSymbols = [...recentBuySymbols].filter(s => olderBuySymbols.has(s));
-  
+
   // If less than 20% overlap, might indicate chasing new trends
   return commonSymbols.length < (recentBuySymbols.size * 0.2);
 }
@@ -485,7 +485,7 @@ function hasRecencyBiasPatterns(trades: UserTrade[]): boolean {
 function calculateBiasScore(trades: UserTrade[], biasType: BiasType): number {
   // Default moderate score
   let score = 50;
-  
+
   switch (biasType) {
     case 'loss_aversion':
       // In production, this would have sophisticated scoring logic
@@ -498,7 +498,7 @@ function calculateBiasScore(trades: UserTrade[], biasType: BiasType): number {
     default:
       score = 50; // Default moderate score
   }
-  
+
   // Return score between 0-100
   return Math.max(0, Math.min(100, score));
 }
@@ -516,30 +516,30 @@ function calculateLossAversionScore(trades: UserTrade[]): number {
     acc[trade.symbol].push(trade);
     return acc;
   }, {} as Record<string, UserTrade[]>);
-  
+
   let totalScore = 0;
   let symbolsAnalyzed = 0;
-  
+
   Object.values(tradesBySymbol).forEach(symbolTrades => {
     if (symbolTrades.length < 2) return;
-    
+
     const buyTrades = symbolTrades.filter(t => t.action === 'buy');
     const sellTrades = symbolTrades.filter(t => t.action === 'sell');
-    
+
     if (buyTrades.length === 0 || sellTrades.length === 0) return;
-    
+
     // Calculate buy and sell prices (simplified)
     const avgBuyPrice = buyTrades.reduce((sum, t) => sum + t.price, 0) / buyTrades.length;
     const avgSellPrice = sellTrades.reduce((sum, t) => sum + t.price, 0) / sellTrades.length;
-    
+
     // Calculate avg hold times
     const avgBuyDate = new Date(buyTrades.reduce((sum, t) => sum + new Date(t.tradeDate).getTime(), 0) / buyTrades.length);
     const avgSellDate = new Date(sellTrades.reduce((sum, t) => sum + new Date(t.tradeDate).getTime(), 0) / sellTrades.length);
     const holdTime = avgSellDate.getTime() - avgBuyDate.getTime();
-    
+
     // Higher score (worse) if losing trades held longer
     let symbolScore = 50;
-    
+
     if (avgSellPrice < avgBuyPrice) {
       // Losing trade - higher score if held longer
       symbolScore += Math.min(50, holdTime / (7 * 24 * 60 * 60 * 1000) * 10); // Add points for each week held
@@ -547,11 +547,11 @@ function calculateLossAversionScore(trades: UserTrade[]): number {
       // Winning trade - lower score is better
       symbolScore -= Math.min(30, holdTime / (30 * 24 * 60 * 60 * 1000) * 20); // Subtract points for holding winners
     }
-    
+
     totalScore += symbolScore;
     symbolsAnalyzed++;
   });
-  
+
   return symbolsAnalyzed > 0 ? Math.round(totalScore / symbolsAnalyzed) : 50;
 }
 
@@ -561,30 +561,30 @@ function calculateLossAversionScore(trades: UserTrade[]): number {
 function calculateRecencyBiasScore(trades: UserTrade[]): number {
   // Simplified scoring
   if (trades.length < 5) return 50;
-  
+
   // Sort trades by date
   const sortedTrades = [...trades].sort((a, b) => 
     new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime()
   );
-  
+
   // Split into time periods
   const recentQuarter = sortedTrades.slice(Math.floor(sortedTrades.length * 0.75));
   const olderTrades = sortedTrades.slice(0, Math.floor(sortedTrades.length * 0.75));
-  
+
   if (recentQuarter.length === 0 || olderTrades.length === 0) return 50;
-  
+
   // Calculate trading patterns
   const recentTradeFrequency = recentQuarter.length / 
     ((new Date(recentQuarter[recentQuarter.length - 1].tradeDate).getTime() - 
       new Date(recentQuarter[0].tradeDate).getTime()) / (24 * 60 * 60 * 1000));
-  
+
   const olderTradeFrequency = olderTrades.length / 
     ((new Date(olderTrades[olderTrades.length - 1].tradeDate).getTime() - 
       new Date(olderTrades[0].tradeDate).getTime()) / (24 * 60 * 60 * 1000));
-  
+
   // Score based on change in trading frequency
   let score = 50;
-  
+
   if (recentTradeFrequency > olderTradeFrequency * 2) {
     // Significantly increased trading frequency recently
     score += 30;
@@ -595,7 +595,7 @@ function calculateRecencyBiasScore(trades: UserTrade[]): number {
     // Slightly increased trading frequency
     score += 10;
   }
-  
+
   return Math.max(0, Math.min(100, score));
 }
 
@@ -604,7 +604,7 @@ function calculateRecencyBiasScore(trades: UserTrade[]): number {
  */
 function determineBiasImpact(trades: UserTrade[], biasType: BiasType): 'low' | 'medium' | 'high' {
   const score = calculateBiasScore(trades, biasType);
-  
+
   if (score >= 70) return 'high';
   if (score >= 40) return 'medium';
   return 'low';
@@ -615,7 +615,7 @@ function determineBiasImpact(trades: UserTrade[], biasType: BiasType): 'low' | '
  */
 function findLossAversionEvidence(trades: UserTrade[]): any[] {
   const evidence = [];
-  
+
   // Group trades by symbol
   const tradesBySymbol = trades.reduce((acc, trade) => {
     if (!acc[trade.symbol]) {
@@ -624,27 +624,27 @@ function findLossAversionEvidence(trades: UserTrade[]): any[] {
     acc[trade.symbol].push(trade);
     return acc;
   }, {} as Record<string, UserTrade[]>);
-  
+
   // Find examples of holding losing positions too long
   Object.entries(tradesBySymbol).forEach(([symbol, symbolTrades]) => {
     if (symbolTrades.length < 2) return;
-    
+
     const buyTrades = symbolTrades.filter(t => t.action === 'buy')
       .sort((a, b) => new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime());
-    
+
     const sellTrades = symbolTrades.filter(t => t.action === 'sell')
       .sort((a, b) => new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime());
-    
+
     if (buyTrades.length === 0 || sellTrades.length === 0) return;
-    
+
     // Simple matching of buy-sell pairs (in production this would be more sophisticated)
     const earliestBuy = buyTrades[0];
     const latestSell = sellTrades[sellTrades.length - 1];
-    
+
     const buyDate = new Date(earliestBuy.tradeDate);
     const sellDate = new Date(latestSell.tradeDate);
     const holdPeriodDays = Math.round((sellDate.getTime() - buyDate.getTime()) / (24 * 60 * 60 * 1000));
-    
+
     if (latestSell.price < earliestBuy.price && holdPeriodDays > 60) {
       // Found evidence of holding a losing position for over 60 days
       evidence.push({
@@ -659,7 +659,7 @@ function findLossAversionEvidence(trades: UserTrade[]): any[] {
       });
     }
   });
-  
+
   return evidence;
 }
 
@@ -668,40 +668,40 @@ function findLossAversionEvidence(trades: UserTrade[]): any[] {
  */
 function findRecencyBiasEvidence(trades: UserTrade[]): any[] {
   const evidence = [];
-  
+
   // Sort trades by date
   const sortedTrades = [...trades].sort((a, b) => 
     new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime()
   );
-  
+
   if (sortedTrades.length < 5) return evidence;
-  
+
   // Get recent market trends from trade context (simplified)
   const recentTrades = sortedTrades.slice(-Math.min(10, Math.floor(sortedTrades.length / 3)));
-  
+
   // Get unique symbols from recent trades
   const recentSymbols = [...new Set(recentTrades.map(t => t.symbol))];
-  
+
   // Check for clustering of similar trades in short timeframes
   recentSymbols.forEach(symbol => {
     const symbolTrades = recentTrades.filter(t => t.symbol === symbol && t.action === 'buy');
-    
+
     if (symbolTrades.length < 2) return;
-    
+
     // Sort by date
     symbolTrades.sort((a, b) => 
       new Date(a.tradeDate).getTime() - new Date(b.tradeDate).getTime()
     );
-    
+
     // Check for rapid increases in position size
     const firstTrade = symbolTrades[0];
     const lastTrade = symbolTrades[symbolTrades.length - 1];
-    
+
     const daysBetween = Math.round(
       (new Date(lastTrade.tradeDate).getTime() - new Date(firstTrade.tradeDate).getTime()) 
       / (24 * 60 * 60 * 1000)
     );
-    
+
     if (daysBetween < 14 && symbolTrades.length >= 3) {
       // Multiple trades of the same symbol in a short period
       evidence.push({
@@ -714,7 +714,7 @@ function findRecencyBiasEvidence(trades: UserTrade[]): any[] {
       });
     }
   });
-  
+
   return evidence;
 }
 
@@ -726,7 +726,7 @@ async function useAIForBiasDetection(
   holdings: PortfolioHolding[]
 ): Promise<BiasDetectionResult['detectedBiases']> {
   if (trades.length === 0) return [];
-  
+
   try {
     // Prepare data for analysis
     const tradeData = trades.map(t => ({
@@ -737,7 +737,7 @@ async function useAIForBiasDetection(
       date: new Date(t.tradeDate).toISOString().split('T')[0],
       emotionalState: t.emotionalState
     }));
-    
+
     const holdingData = holdings.map(h => ({
       symbol: h.symbol,
       shares: h.shares,
@@ -745,7 +745,7 @@ async function useAIForBiasDetection(
       currentValue: h.currentValue,
       purchaseDate: h.purchaseDate ? new Date(h.purchaseDate).toISOString().split('T')[0] : 'unknown'
     }));
-    
+
     // Bias detection prompt
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -771,13 +771,13 @@ Respond in JSON format with an array of detected biases.`
       ],
       response_format: { type: "json_object" }
     });
-    
+
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     if (!result.detectedBiases || !Array.isArray(result.detectedBiases)) {
       return [];
     }
-    
+
     // Map AI results to our interface
     return result.detectedBiases.map((bias: any) => ({
       biasType: bias.biasType as BiasType,
@@ -798,23 +798,23 @@ Respond in JSON format with an array of detected biases.`
  */
 function calculateOverallBiasScore(biases: BiasDetectionResult['detectedBiases']): number {
   if (biases.length === 0) return 0;
-  
+
   // Weight biases by impact
   const impactWeights = {
     'high': 1.5,
     'medium': 1.0,
     'low': 0.5
   };
-  
+
   let weightedSum = 0;
   let totalWeight = 0;
-  
+
   biases.forEach(bias => {
     const weight = impactWeights[bias.impact];
     weightedSum += bias.score * weight;
     totalWeight += weight;
   });
-  
+
   return Math.round(weightedSum / totalWeight);
 }
 
@@ -825,35 +825,35 @@ function generateImprovementSuggestions(biases: BiasDetectionResult['detectedBia
   if (biases.length === 0) {
     return ["No significant biases detected. Continue monitoring your trading patterns."];
   }
-  
+
   // Sort biases by impact and score
   const sortedBiases = [...biases].sort((a, b) => {
     const impactOrder = { 'high': 3, 'medium': 2, 'low': 1 };
-    const impactDiff = impactOrder[b.impact] - impactOrder[a.impact];
-    
+    const impactDiff = impactOrder[b.impact] - impactOrdera.impact;
+
     if (impactDiff !== 0) return impactDiff;
     return b.score - a.score;
   });
-  
+
   // Generate suggestions for top 3 biases
   const suggestions = sortedBiases.slice(0, 3).map(bias => {
     const definition = biasDefinitions[bias.biasType];
     const randomCorrectionIndex = Math.floor(Math.random() * definition.corrections.length);
-    
+
     return `${definition.emoji} ${definition.name}: ${definition.corrections[randomCorrectionIndex]}`;
   });
-  
+
   // Add a general suggestion
   if (sortedBiases.length > 0) {
     const highBiasCount = sortedBiases.filter(b => b.impact === 'high').length;
-    
+
     if (highBiasCount >= 2) {
       suggestions.push("⚠️ Consider using automated trading rules to reduce emotional decision-making.");
     } else {
       suggestions.push("📊 Schedule a monthly portfolio review with a focus on objective performance metrics.");
     }
   }
-  
+
   return suggestions;
 }
 
@@ -874,7 +874,7 @@ async function generateBiasFreePortfolioComparison(
       }
     };
   }
-  
+
   // Group holdings by symbol
   const symbolHoldings = holdings.reduce((acc, holding) => {
     if (!acc[holding.symbol]) {
@@ -887,23 +887,23 @@ async function generateBiasFreePortfolioComparison(
     acc[holding.symbol].value += holding.currentValue || 0;
     return acc;
   }, {} as Record<string, { shares: number, value: number }>);
-  
+
   // Calculate total portfolio value
   const totalValue = Object.values(symbolHoldings).reduce((sum, holding) => sum + holding.value, 0);
-  
+
   // Calculate actual portfolio allocation
   const actualAllocation = Object.entries(symbolHoldings).reduce((acc, [symbol, data]) => {
     acc[symbol] = (data.value / totalValue) * 100;
     return acc;
   }, {} as Record<string, number>);
-  
+
   // Create a hypothetical bias-free portfolio
   // This would normally involve sophisticated optimization
   // For demo purposes, we'll create a more balanced allocation
-  
+
   const symbols = Object.keys(symbolHoldings);
   const biasFreeAllocation = {} as Record<string, number>;
-  
+
   // Very simple allocation strategy (would be much more sophisticated in production)
   if (symbols.length <=.5) {
     // Equal weight for small portfolios
@@ -914,16 +914,16 @@ async function generateBiasFreePortfolioComparison(
   } else {
     // More sophisticated allocation for larger portfolios
     // In production this would use optimization algorithms
-    
+
     // For demo, just use a simple tiered approach
     // Top 3 symbols get 20% each, rest equally split 40%
     const topSymbols = symbols.slice(0, 3);
     const otherSymbols = symbols.slice(3);
-    
+
     topSymbols.forEach(symbol => {
       biasFreeAllocation[symbol] = 20;
     });
-    
+
     if (otherSymbols.length > 0) {
       const remainingWeight = 40 / otherSymbols.length;
       otherSymbols.forEach(symbol => {
@@ -931,16 +931,16 @@ async function generateBiasFreePortfolioComparison(
       });
     }
   }
-  
+
   // Calculate metrics for comparison
   const expectedReturnDifference = 1.5; // Percentage points, would be calculated based on historical data
   const riskDifference = -2.3; // Lower risk in bias-free portfolio, would be calculated
-  
+
   // Calculate a diversification score (higher is better)
   const actualDiversification = calculateDiversificationScore(actualAllocation);
   const biasFreeeDiversification = calculateDiversificationScore(biasFreeAllocation);
   const diversificationImprovement = biasFreeeDiversification - actualDiversification;
-  
+
   return {
     actualPortfolio: {
       value: totalValue,
@@ -967,7 +967,7 @@ function calculateDiversificationScore(allocation: Record<string, number>): numb
   const hhi = Object.values(allocation).reduce((sum, weight) => {
     return sum + Math.pow(weight / 100, 2);
   }, 0);
-  
+
   // Convert to a 0-100 score where higher is better diversification
   return Math.round((1 - hhi) * 100);
 }
@@ -977,11 +977,11 @@ function calculateDiversificationScore(allocation: Record<string, number>): numb
  */
 export function getBiasEducationalContent(biasType: BiasType): BiasEducationalContent {
   const definition = biasDefinitions[biasType];
-  
+
   if (!definition) {
     throw new Error(`Bias type "${biasType}" not found`);
   }
-  
+
   return {
     biasType,
     title: definition.name,
@@ -1007,24 +1007,24 @@ export function getBiasEducationalContent(biasType: BiasType): BiasEducationalCo
 export async function getUserBiasProfile(userId: number): Promise<UserBiasProfile> {
   // Get user's latest bias analysis
   const latestReport = await storage.getLatestBiasReport(userId);
-  
+
   if (!latestReport) {
     throw new Error(`No bias analysis found for user ${userId}`);
   }
-  
+
   // Get user's historical bias reports to track trends
   const historicalReports = await storage.getUserBiasReports(userId);
-  
+
   // Get current user to check overall bias score
   const user = await storage.getUserWithBiasFlags(userId);
-  
+
   if (!user) {
     throw new Error(`User with ID ${userId} not found`);
   }
-  
+
   // Get primary biases from the latest report
   const primaryBiases = JSON.parse(latestReport.primaryBiases as string || "[]");
-  
+
   // Calculate trends for each bias by comparing with historical data
   const biasesWithTrends = primaryBiases.map((bias: any) => {
     const trend = calculateBiasTrend(bias.biasType, historicalReports);
@@ -1033,16 +1033,16 @@ export async function getUserBiasProfile(userId: number): Promise<UserBiasProfil
       trend
     };
   });
-  
+
   // Create historical scores data points
   const historicalScores = historicalReports.map(report => ({
     date: new Date(report.createdAt).toISOString().split('T')[0],
     score: report.overallScore
   }));
-  
+
   // Get recommendations from the latest report
   const recommendations = JSON.parse(latestReport.improvementSuggestions as string || "[]");
-  
+
   return {
     userId,
     overallScore: user.biasScore || 0,
@@ -1061,29 +1061,29 @@ function calculateBiasTrend(
   reports: BiasAnalysisReport[]
 ): 'improving' | 'worsening' | 'stable' {
   if (reports.length < 2) return 'stable';
-  
+
   // Sort reports by date (newest first)
   const sortedReports = [...reports].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
-  
+
   // Compare the most recent report with the one before it
   const latest = sortedReports[0];
   const previous = sortedReports[1];
-  
+
   // Extract bias scores from each report
   const latestBiases = JSON.parse(latest.primaryBiases as string || "[]");
   const previousBiases = JSON.parse(previous.primaryBiases as string || "[]");
-  
+
   // Find the specific bias in each report
   const latestBias = latestBiases.find((b: any) => b.biasType === biasType);
   const previousBias = previousBiases.find((b: any) => b.biasType === biasType);
-  
+
   if (!latestBias || !previousBias) return 'stable';
-  
+
   // Calculate difference in scores
   const scoreDifference = latestBias.score - previousBias.score;
-  
+
   if (scoreDifference <= -5) return 'improving'; // At least 5 points better
   if (scoreDifference >= 5) return 'worsening';  // At least 5 points worse
   return 'stable';
@@ -1101,10 +1101,10 @@ export async function processNaturalLanguageQuery(
   if (!user) {
     throw new Error(`User with ID ${userId} not found`);
   }
-  
+
   // Get user's biases
   const biases = await storage.getUserBiases(userId);
-  
+
   // Get user's portfolio data
   const portfolios = await storage.getPortfoliosByUserId(userId);
   const portfolioHoldings: PortfolioHolding[] = [];
@@ -1112,10 +1112,10 @@ export async function processNaturalLanguageQuery(
     const holdings = await storage.getHoldingsByPortfolioId(portfolio.id);
     portfolioHoldings.push(...holdings);
   }
-  
+
   // Get user's trading history
   const trades = await storage.getUserTrades(userId);
-  
+
   try {
     // Process query with OpenAI
     const response = await openai.chat.completions.create({
@@ -1140,14 +1140,14 @@ My question is: ${query}`
         }
       ]
     });
-    
+
     // Extract biases mentioned in the response
     const answer = response.choices[0].message.content || "";
     const mentionedBiases = extractBiasesFromText(answer);
-    
+
     // Extract suggestions from the answer
     const suggestedActions = extractSuggestionsFromText(answer);
-    
+
     return {
       answer,
       relatedBiases: mentionedBiases,
@@ -1170,7 +1170,7 @@ My question is: ${query}`
  */
 function formatBiasListForLLM(biases: BehavioralBias[]): string {
   if (biases.length === 0) return "None detected yet";
-  
+
   return biases.map(bias => 
     `${biasDefinitions[bias.biasType as BiasType]?.name || bias.biasType} (score: ${bias.score}, impact: ${bias.impact})`
   ).join(', ');
@@ -1181,7 +1181,7 @@ function formatBiasListForLLM(biases: BehavioralBias[]): string {
  */
 function formatPortfolioForLLM(holdings: PortfolioHolding[]): string {
   if (holdings.length === 0) return "No holdings";
-  
+
   // Group holdings by symbol
   const symbolHoldings = holdings.reduce((acc, holding) => {
     if (!acc[holding.symbol]) {
@@ -1194,7 +1194,7 @@ function formatPortfolioForLLM(holdings: PortfolioHolding[]): string {
     acc[holding.symbol].value += holding.currentValue || 0;
     return acc;
   }, {} as Record<string, { shares: number, value: number }>);
-  
+
   return Object.entries(symbolHoldings)
     .map(([symbol, data]) => `${symbol} (${data.shares} shares, $${data.value.toFixed(2)})`)
     .join(', ');
@@ -1205,15 +1205,15 @@ function formatPortfolioForLLM(holdings: PortfolioHolding[]): string {
  */
 function formatTradesForLLM(trades: UserTrade[]): string {
   if (trades.length === 0) return "No trades";
-  
+
   // Sort by date (most recent first)
   const sortedTrades = [...trades].sort((a, b) => 
     new Date(b.tradeDate).getTime() - new Date(a.tradeDate).getTime()
   );
-  
+
   // Take just the 5 most recent trades
   const recentTrades = sortedTrades.slice(0, 5);
-  
+
   return recentTrades.map(trade => 
     `${trade.action.toUpperCase()} ${trade.shares} ${trade.symbol} @ $${trade.price} on ${new Date(trade.tradeDate).toISOString().split('T')[0]}`
   ).join(', ');
@@ -1225,17 +1225,17 @@ function formatTradesForLLM(trades: UserTrade[]): string {
 function extractBiasesFromText(text: string): BiasType[] {
   const biasTypes = Object.keys(biasDefinitions) as BiasType[];
   const mentionedBiases: BiasType[] = [];
-  
+
   biasTypes.forEach(biasType => {
     const biasName = biasDefinitions[biasType].name.toLowerCase();
     const searchText = text.toLowerCase();
-    
+
     // Check for bias type ID or name
     if (searchText.includes(biasType) || searchText.includes(biasName)) {
       mentionedBiases.push(biasType);
     }
   });
-  
+
   return mentionedBiases;
 }
 
@@ -1252,9 +1252,9 @@ function extractSuggestionsFromText(text: string): string[] {
     /recommend\s+([^.!?]+[.!?])/gi,
     /suggestion(?:s)?:?\s+([^.!?]+[.!?])/gi
   ];
-  
+
   let suggestions: string[] = [];
-  
+
   suggestionPatterns.forEach(pattern => {
     const matches = [...text.matchAll(pattern)];
     matches.forEach(match => {
@@ -1263,18 +1263,18 @@ function extractSuggestionsFromText(text: string): string[] {
       }
     });
   });
-  
+
   // If no suggestions found, check last few sentences
   if (suggestions.length === 0) {
     const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    
+
     if (sentences.length > 0) {
       // Get last 2 sentences as they often contain suggestions
       const lastSentences = sentences.slice(-Math.min(2, sentences.length));
       suggestions = lastSentences.map(s => s.trim());
     }
   }
-  
+
   // Remove duplicates and limit to 3
   return [...new Set(suggestions)].slice(0, 3);
 }
