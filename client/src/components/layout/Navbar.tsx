@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3, PieChart, LayoutDashboard, Menu } from "lucide-react";
+import { BarChart2, TrendingUp, Brain, Lightbulb, BarChart3, PieChart, LayoutDashboard, Menu, Wallet } from "lucide-react";
 import logoPath from "@assets/neufin tagline bare logo.png";
 import { AuthButton } from "./AuthButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,6 +86,15 @@ const Navbar = () => {
               >
                 <PieChart className="mr-1.5 h-4 w-4" />
                 Bias Analyzer
+              </Button>
+            </Link>
+            <Link href="/accounts">
+              <Button 
+                variant={location === "/accounts" ? "default" : "ghost"} 
+                className="text-sm h-9"
+              >
+                <Wallet className="mr-1.5 h-4 w-4" />
+                Investment Accounts
               </Button>
             </Link>
           </nav>

@@ -1,230 +1,241 @@
-/**
- * Plaid Controller for API endpoints
- */
-import express from 'express';
-import { isAuthenticated } from '../../replitAuth';
-import { createLinkToken, exchangePublicToken, fetchInvestmentHoldings, fetchInvestmentTransactions } from './plaid-client';
+import { Request, Response } from 'express';
 import { storage } from '../../storage';
+import { 
+  createLinkToken, 
+  exchangePublicToken, 
+  getAccounts, 
+  getInvestmentHoldings,
+  getInstitutionById
+} from './plaid-client';
+import { formatDate } from '../../utils/date-utils';
 
-const router = express.Router();
-
-// Ensure all routes are protected by authentication
-router.use(isAuthenticated);
-
-/**
- * Generate a Plaid Link token to initiate the OAuth flow
- */
-router.get('/link-token', async (req: any, res) => {
+// Generate a link token for the user to connect their accounts
+export async function getLinkToken(req: Request, res: Response) {
   try {
-    const userId = req.user.claims.sub;
+    // Get the user ID from the authenticated session
+    const userId = req.user?.claims?.sub;
     
     if (!userId) {
-      return res.status(401).json({ 
-        error: 'Unauthorized',
-        message: 'User ID not found in session' 
-      });
+      return res.status(401).json({ error: 'User not authenticated' });
     }
-    
+
+    // Create a link token for the user
     const linkToken = await createLinkToken(userId);
     
-    return res.json({ link_token: linkToken });
-  } catch (error) {
+    res.json({ link_token: linkToken });
+  } catch (error: any) {
     console.error('Error creating link token:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
+    res.status(500).json({ error: error.message || 'Failed to create link token' });
   }
-});
+}
 
-/**
- * Exchange the public token from Plaid for an access token
- */
-router.post('/exchange-public-token', async (req: any, res) => {
+// Exchange a public token for an access token and store it
+export async function exchangeToken(req: Request, res: Response) {
   try {
     const { publicToken, institutionId, institutionName } = req.body;
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims?.sub;
     
-    if (!publicToken || !institutionId || !institutionName) {
-      return res.status(400).json({ 
-        error: 'Bad Request',
-        message: 'Public token, institution ID, and institution name are required' 
-      });
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const accessToken = await exchangePublicToken(
+    if (!publicToken) {
+      return res.status(400).json({ error: 'Public token is required' });
+    }
+
+    // Exchange public token for an access token
+    const accessToken = await exchangePublicToken(publicToken);
+    
+    // Store the Plaid item in our database
+    const plaidItem = await storage.createPlaidItem({
       userId,
-      publicToken,
+      accessToken,
       institutionId,
-      institutionName
+      institutionName,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Get accounts for this item and store them
+    const accountsData = await getAccounts(accessToken);
+    
+    for (const account of accountsData.accounts) {
+      // Only store investment accounts
+      if (account.type === 'investment') {
+        await storage.createPlaidAccount({
+          plaidItemId: plaidItem.id,
+          plaidAccountId: account.account_id,
+          name: account.name,
+          mask: account.mask,
+          type: account.type,
+          subtype: account.subtype || null,
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    // Get investment holdings
+    await syncInvestmentHoldings(plaidItem.id, accessToken);
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error exchanging token:', error);
+    res.status(500).json({ error: error.message || 'Failed to exchange token' });
+  }
+}
+
+// Sync investment holdings for an item
+async function syncInvestmentHoldings(itemId: number, accessToken: string) {
+  try {
+    // Get accounts for this item
+    const plaidAccounts = await storage.getPlaidAccountsByItemId(itemId);
+    if (!plaidAccounts.length) return;
+
+    // Get investment holdings data
+    const holdingsData = await getInvestmentHoldings(accessToken);
+    
+    // Map of account_id to our database account id
+    const accountMap = new Map(
+      plaidAccounts.map(account => [account.plaidAccountId, account.id])
     );
-    
-    return res.json({
-      success: true,
-      message: 'Successfully linked account'
-    });
-  } catch (error) {
-    console.error('Error exchanging public token:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
-});
 
-/**
- * Get all investment holdings for the current user
- */
-router.get('/holdings', async (req: any, res) => {
-  try {
-    const userId = req.user.claims.sub;
-    
-    // Check if the user has any linked accounts
-    const plaidItems = await storage.getPlaidItemsByUserId(userId);
-    
-    if (!plaidItems || plaidItems.length === 0) {
-      return res.status(404).json({
-        error: 'Not Found',
-        message: 'No linked investment accounts found'
+    // Process holdings
+    for (const holding of holdingsData.holdings) {
+      const accountId = accountMap.get(holding.account_id);
+      if (!accountId) continue; // Skip if account not found in our database
+      
+      // Get security details
+      const security = holdingsData.securities.find(
+        s => s.security_id === holding.security_id
+      );
+      
+      if (!security) continue; // Skip if security not found
+
+      // Store or update the holding
+      await storage.createOrUpdatePlaidHolding({
+        accountId,
+        securityId: holding.security_id,
+        symbol: security.ticker_symbol || 'UNKNOWN',
+        name: security.name || 'Unknown Security',
+        quantity: holding.quantity,
+        costBasis: holding.cost_basis || null,
+        currentPrice: security.close_price || null,
+        currentValue: holding.institution_value || null,
+        isoCurrencyCode: holding.iso_currency_code || 'USD',
+        updatedAt: new Date(),
       });
     }
-    
-    // Fetch investment holdings from Plaid
-    const holdings = await fetchInvestmentHoldings(userId);
-    
-    return res.json(holdings);
   } catch (error) {
-    console.error('Error fetching investment holdings:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
+    console.error('Error syncing investment holdings:', error);
+    throw new Error('Failed to sync investment holdings');
   }
-});
+}
 
-/**
- * Get investment transactions for the current user
- */
-router.get('/transactions', async (req: any, res) => {
+// Get a user's connected accounts
+export async function getConnectedAccounts(req: Request, res: Response) {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims?.sub;
     
-    // Parse date parameters, default to last 30 days if not provided
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    
-    if (req.query.start_date) {
-      startDate.setTime(Date.parse(req.query.start_date));
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
-    
-    if (req.query.end_date) {
-      endDate.setTime(Date.parse(req.query.end_date));
-    }
-    
-    // Check if the user has any linked accounts
-    const plaidItems = await storage.getPlaidItemsByUserId(userId);
-    
-    if (!plaidItems || plaidItems.length === 0) {
-      return res.status(404).json({
-        error: 'Not Found',
-        message: 'No linked investment accounts found'
-      });
-    }
-    
-    // Fetch investment transactions from Plaid
-    const transactions = await fetchInvestmentTransactions(userId, startDate, endDate);
-    
-    return res.json(transactions);
-  } catch (error) {
-    console.error('Error fetching investment transactions:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
-});
 
-/**
- * Get all linked accounts for the current user
- */
-router.get('/accounts', async (req: any, res) => {
-  try {
-    const userId = req.user.claims.sub;
-    
-    // Get all items for the user
+    // Get all Plaid items for this user
     const items = await storage.getPlaidItemsByUserId(userId);
     
-    if (!items || items.length === 0) {
+    // Map to get accounts for each item
+    const accountsPromises = items.map(async (item) => {
+      const accounts = await storage.getPlaidAccountsByItemId(item.id);
+      return accounts.map(account => ({
+        id: account.id,
+        name: account.name,
+        mask: account.mask,
+        type: account.type,
+        subtype: account.subtype,
+        institution: item.institutionName,
+      }));
+    });
+
+    const accountsArrays = await Promise.all(accountsPromises);
+    const accounts = accountsArrays.flat();
+
+    res.json(accounts);
+  } catch (error: any) {
+    console.error('Error fetching accounts:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch accounts' });
+  }
+}
+
+// Get a user's investment holdings
+export async function getInvestmentHoldingsForUser(req: Request, res: Response) {
+  try {
+    const userId = req.user?.claims?.sub;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Get all Plaid items for this user
+    const items = await storage.getPlaidItemsByUserId(userId);
+    if (items.length === 0) {
       return res.json([]);
     }
     
-    // For each item, get the accounts
-    const accountPromises = items.map(item => storage.getPlaidAccountsByItemId(item.id));
-    const accountsArrays = await Promise.all(accountPromises);
-    
-    // Flatten the array of account arrays
-    const accounts = accountsArrays.flat();
-    
-    // Format the response
-    const formattedAccounts = accounts.map(account => ({
-      id: account.id,
-      name: account.name,
-      mask: account.mask,
-      type: account.type,
-      subtype: account.subtype,
-      institution: items.find(item => item.id === account.plaidItemId)?.institutionName || 'Unknown',
-    }));
-    
-    return res.json(formattedAccounts);
-  } catch (error) {
-    console.error('Error fetching accounts:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
-});
+    // Get all accounts for these items
+    const accountIds = [];
+    for (const item of items) {
+      const accounts = await storage.getPlaidAccountsByItemId(item.id);
+      accountIds.push(...accounts.map(a => a.id));
+    }
 
-/**
- * Remove a linked account
- */
-router.delete('/items/:itemId', async (req: any, res) => {
+    if (accountIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Get holdings for all accounts
+    const holdings = [];
+    for (const accountId of accountIds) {
+      const accountHoldings = await storage.getPlaidHoldingsByAccountId(accountId);
+      holdings.push(...accountHoldings);
+    }
+
+    res.json(holdings);
+  } catch (error: any) {
+    console.error('Error fetching holdings:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch holdings' });
+  }
+}
+
+// Delete a Plaid connection (item)
+export async function deletePlaidItem(req: Request, res: Response) {
   try {
-    const userId = req.user.claims.sub;
-    const itemId = parseInt(req.params.itemId);
+    const { itemId } = req.params;
+    const userId = req.user?.claims?.sub;
     
-    if (isNaN(itemId)) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Invalid item ID'
-      });
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
-    
-    // Verify the item belongs to the user
-    const item = await storage.getPlaidItemById(itemId);
-    
-    if (!item || item.userId !== userId) {
-      return res.status(404).json({
-        error: 'Not Found',
-        message: 'Item not found or does not belong to the user'
-      });
-    }
-    
-    // Delete the item (this should cascade to accounts, holdings, and transactions)
-    await storage.deletePlaidItem(itemId);
-    
-    return res.json({
-      success: true,
-      message: 'Item deleted successfully'
-    });
-  } catch (error) {
-    console.error('Error deleting item:', error);
-    return res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
-});
 
-export default router;
+    // Get the item to ensure it belongs to this user
+    const item = await storage.getPlaidItemById(parseInt(itemId));
+    
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    
+    if (item.userId !== userId) {
+      return res.status(403).json({ error: 'Unauthorized access to this item' });
+    }
+
+    // Delete the item
+    await storage.deletePlaidItem(parseInt(itemId));
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting Plaid item:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete Plaid item' });
+  }
+}
